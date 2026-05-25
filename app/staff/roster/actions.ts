@@ -1,0 +1,229 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { headers } from "next/headers";
+import { requireStaff } from "@/lib/staff";
+import { createAdminClient } from "@/lib/supabase/admin";
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const POSITIONS = ["GK", "DEF", "MIL", "ATT"] as const;
+type Pos = (typeof POSITIONS)[number];
+
+/** Ajoute un nouveau joueur dans la sélection du staff. */
+export async function addPlayer(input: {
+  first_name: string;
+  last_name: string;
+  position: Pos;
+  jersey_number?: number | null;
+  email?: string | null;
+}) {
+  const ctx = await requireStaff();
+  if (!ctx) redirect("/login");
+
+  const first = input.first_name.trim();
+  const last = input.last_name.trim();
+  if (!first || !last) return { ok: false as const, error: "Prénom et nom requis." };
+  if (!POSITIONS.includes(input.position)) {
+    return { ok: false as const, error: "Poste invalide." };
+  }
+  const email = input.email?.trim().toLowerCase() ?? "";
+  if (email && !EMAIL_RE.test(email)) {
+    return { ok: false as const, error: "Email invalide." };
+  }
+
+  const admin = createAdminClient();
+
+  // Évite les doublons par couple first+last dans la sélection
+  const { data: dup } = await admin
+    .from("players")
+    .select("id")
+    .eq("selection_id", ctx.staff.selection_id)
+    .eq("first_name", first)
+    .eq("last_name", last)
+    .limit(1);
+  if (dup && dup.length > 0) {
+    return { ok: false as const, error: `${first} ${last} existe déjà dans la sélection.` };
+  }
+
+  // Si email fourni : trouve/crée le user et vérifie qu'il n'est pas déjà rattaché
+  let userId: string | null = null;
+  if (email) {
+    const { data: { users } } = await admin.auth.admin.listUsers();
+    const existing = users.find((u) => u.email?.toLowerCase() === email);
+    if (existing) {
+      userId = existing.id;
+    } else {
+      const { data: created, error: cErr } = await admin.auth.admin.createUser({
+        email,
+        email_confirm: true,
+      });
+      if (cErr || !created.user) {
+        return { ok: false as const, error: cErr?.message ?? "Création auth user échouée." };
+      }
+      userId = created.user.id;
+    }
+    const { data: conflict } = await admin
+      .from("players")
+      .select("id").eq("user_id", userId).limit(1);
+    if (conflict && conflict.length > 0) {
+      return { ok: false as const, error: "Cet email est déjà rattaché à un autre joueur." };
+    }
+  }
+
+  const { data: created, error } = await admin
+    .from("players")
+    .insert({
+      selection_id: ctx.staff.selection_id,
+      first_name: first,
+      last_name: last,
+      position: input.position,
+      jersey_number: input.jersey_number ?? null,
+      user_id: userId,
+    })
+    .select("id")
+    .single();
+  if (error) return { ok: false as const, error: error.message };
+
+  revalidatePath("/staff/roster");
+  revalidatePath("/staff");
+  return { ok: true as const, id: created.id };
+}
+
+/** Supprime un joueur (et toutes ses données via ON DELETE CASCADE). */
+export async function deletePlayer(playerId: string) {
+  const ctx = await requireStaff();
+  if (!ctx) redirect("/login");
+  const admin = createAdminClient();
+  const { data: player } = await admin
+    .from("players").select("selection_id").eq("id", playerId).maybeSingle();
+  if (!player || player.selection_id !== ctx.staff.selection_id) {
+    return { ok: false as const, error: "Joueur hors de ta sélection." };
+  }
+  const { error } = await admin.from("players").delete().eq("id", playerId);
+  if (error) return { ok: false as const, error: error.message };
+  revalidatePath("/staff/roster");
+  revalidatePath("/staff");
+  return { ok: true as const };
+}
+
+/** Lie un email (= compte auth) à un player existant. */
+export async function setPlayerEmail(playerId: string, email: string) {
+  const ctx = await requireStaff();
+  if (!ctx) redirect("/login");
+
+  const normalized = email.trim().toLowerCase();
+  if (!EMAIL_RE.test(normalized)) {
+    return { ok: false as const, error: "Email invalide." };
+  }
+
+  const admin = createAdminClient();
+
+  // Vérifier que le player appartient à la sélection du staff (sécurité)
+  const { data: player } = await admin
+    .from("players")
+    .select("id, selection_id")
+    .eq("id", playerId)
+    .maybeSingle();
+  if (!player || player.selection_id !== ctx.staff.selection_id) {
+    return { ok: false as const, error: "Joueur hors de ta sélection." };
+  }
+
+  // Trouve ou crée l'auth user
+  let userId: string;
+  const { data: { users } } = await admin.auth.admin.listUsers();
+  const existing = users.find((u) => u.email?.toLowerCase() === normalized);
+  if (existing) {
+    userId = existing.id;
+  } else {
+    const { data: created, error: cErr } = await admin.auth.admin.createUser({
+      email: normalized,
+      email_confirm: true,
+    });
+    if (cErr || !created.user) {
+      return { ok: false as const, error: cErr?.message ?? "Création auth user échouée." };
+    }
+    userId = created.user.id;
+  }
+
+  // Empêche d'attribuer un user déjà rattaché à un autre player
+  const { data: conflict } = await admin
+    .from("players")
+    .select("id")
+    .eq("user_id", userId)
+    .neq("id", playerId)
+    .limit(1);
+  if (conflict && conflict.length > 0) {
+    return { ok: false as const, error: "Cet email est déjà rattaché à un autre joueur." };
+  }
+
+  const { error: uErr } = await admin
+    .from("players")
+    .update({ user_id: userId })
+    .eq("id", playerId);
+  if (uErr) return { ok: false as const, error: uErr.message };
+
+  revalidatePath("/staff/roster");
+  return { ok: true as const, email: normalized };
+}
+
+/** Délie un email d'un player (sans supprimer le compte auth). */
+export async function unlinkPlayerEmail(playerId: string) {
+  const ctx = await requireStaff();
+  if (!ctx) redirect("/login");
+  const admin = createAdminClient();
+  const { data: player } = await admin
+    .from("players").select("selection_id").eq("id", playerId).maybeSingle();
+  if (!player || player.selection_id !== ctx.staff.selection_id) {
+    return { ok: false as const, error: "Joueur hors de ta sélection." };
+  }
+  const { error } = await admin
+    .from("players").update({ user_id: null }).eq("id", playerId);
+  if (error) return { ok: false as const, error: error.message };
+  revalidatePath("/staff/roster");
+  return { ok: true as const };
+}
+
+/** Génère un magic link pour un player (à partager via WhatsApp/SMS/mail). */
+export async function generateMagicLinkForPlayer(playerId: string) {
+  const ctx = await requireStaff();
+  if (!ctx) redirect("/login");
+
+  const admin = createAdminClient();
+  const { data: player } = await admin
+    .from("players")
+    .select("id, user_id, selection_id, first_name, last_name")
+    .eq("id", playerId)
+    .maybeSingle();
+  if (!player || player.selection_id !== ctx.staff.selection_id) {
+    return { ok: false as const, error: "Joueur hors de ta sélection." };
+  }
+  if (!player.user_id) {
+    return { ok: false as const, error: "Ce joueur n'a pas encore d'email rattaché." };
+  }
+
+  // Récupère l'email du user
+  const { data: { user: authUser }, error: uErr } = await admin.auth.admin.getUserById(player.user_id);
+  if (uErr || !authUser?.email) {
+    return { ok: false as const, error: "Impossible de retrouver l'email du joueur." };
+  }
+
+  const hdrs = await headers();
+  const host = hdrs.get("host") ?? "localhost:3000";
+  const proto = hdrs.get("x-forwarded-proto") ?? (host.includes("localhost") ? "http" : "https");
+  const origin = `${proto}://${host}`;
+
+  const { data, error } = await admin.auth.admin.generateLink({
+    type: "magiclink",
+    email: authUser.email,
+  });
+  if (error || !data?.properties?.hashed_token) {
+    return { ok: false as const, error: error?.message ?? "Génération échouée." };
+  }
+
+  // On construit une URL qui passe direct par notre /auth/callback (token_hash)
+  // — court-circuite le verify Supabase qui poserait des problèmes de fragment.
+  const url = `${origin}/auth/callback?token_hash=${encodeURIComponent(data.properties.hashed_token)}&type=magiclink&next=/`;
+
+  return { ok: true as const, url, email: authUser.email };
+}

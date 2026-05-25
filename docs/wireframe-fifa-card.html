@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>AureakForm — Wireframe Carte FIFA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&family=Oswald:wght@500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --bg-2: #131826;
+    --ink: #f4f5f7;
+    --muted: #8b93a7;
+    --line: rgba(255,255,255,.08);
+    --gold-1: #f6e3a1;
+    --gold-2: #c9a44b;
+    --gold-3: #806224;
+    --silver-1: #e8e8e8;
+    --silver-2: #a8a8a8;
+    --silver-3: #5a5a5a;
+    --bronze-1: #d8a37a;
+    --bronze-2: #a06a3c;
+    --bronze-3: #5e3a1d;
+    --special-1: #00f0ff;
+    --special-2: #ff2e93;
+    --green: #2bd47d;
+    --orange: #ffa42b;
+    --red: #ff4d5e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--ink); font-family: 'Inter', -apple-system, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  body {
+    background:
+      radial-gradient(900px 600px at 20% -10%, rgba(0,240,255,.06), transparent 60%),
+      radial-gradient(800px 500px at 110% 10%, rgba(255,46,147,.05), transparent 55%),
+      var(--bg);
+    min-height: 100vh;
+    padding: 32px 16px 80px;
+  }
+
+  /* ---------- Layout ---------- */
+  .page { max-width: 1280px; margin: 0 auto; }
+  header.top { display: flex; justify-content: space-between; align-items: end; gap: 16px; margin-bottom: 28px; padding: 0 8px; }
+  .brand { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 2px; }
+  .brand span { color: var(--gold-2); }
+  .crumbs { color: var(--muted); font-size: 13px; }
+
+  .section-title { font-family: 'Oswald', sans-serif; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; font-size: 13px; color: var(--muted); margin: 28px 8px 14px; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 22px;
+    padding: 0 8px;
+  }
+  .grid-mobile {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 22px;
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 0 8px;
+  }
+
+  /* ---------- FIFA CARD ---------- */
+  .card {
+    position: relative;
+    width: 100%;
+    max-width: 280px;
+    aspect-ratio: 5 / 7.4;
+    margin: 0 auto;
+    border-radius: 18px;
+    padding: 16px 18px 14px;
+    color: #1c1206;
+    overflow: hidden;
+    isolation: isolate;
+    box-shadow:
+      0 30px 60px -20px rgba(0,0,0,.55),
+      0 10px 30px -10px rgba(0,0,0,.45),
+      inset 0 1px 0 rgba(255,255,255,.4);
+  }
+
+  /* Gold */
+  .card.gold {
+    background:
+      linear-gradient(160deg, var(--gold-1) 0%, #f0cf6e 35%, var(--gold-2) 65%, var(--gold-3) 100%);
+  }
+  /* Silver */
+  .card.silver {
+    background:
+      linear-gradient(160deg, var(--silver-1) 0%, #cfcfcf 35%, var(--silver-2) 65%, var(--silver-3) 100%);
+    color: #14171f;
+  }
+  /* Bronze */
+  .card.bronze {
+    background:
+      linear-gradient(160deg, var(--bronze-1) 0%, #b67e51 35%, var(--bronze-2) 65%, var(--bronze-3) 100%);
+    color: #2a1809;
+  }
+  /* Special / TOTW (cyan/magenta foil) */
+  .card.special {
+    background:
+      linear-gradient(160deg, #0e1a36 0%, #15102b 50%, #1c0a30 100%);
+    color: #eaf6ff;
+  }
+  .card.special::before {
+    content:'';
+    position:absolute; inset:0;
+    background:
+      conic-gradient(from 220deg at 50% 0%, rgba(0,240,255,.45), transparent 30%),
+      conic-gradient(from 40deg at 50% 100%, rgba(255,46,147,.45), transparent 30%);
+    mix-blend-mode: screen;
+    z-index: 0;
+    pointer-events:none;
+  }
+
+  /* foil shine */
+  .card::after {
+    content:'';
+    position:absolute; inset:0;
+    background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.35) 45%, transparent 60%);
+    transform: translateX(-30%);
+    transition: transform .8s ease;
+    pointer-events:none;
+    z-index: 1;
+    mix-blend-mode: overlay;
+  }
+  .card:hover::after { transform: translateX(30%); }
+
+  .card > * { position: relative; z-index: 2; }
+
+  /* Top : OVR + position + flag/club */
+  .card-top {
+    display:flex; justify-content:space-between; align-items:flex-start;
+    padding-bottom: 4px;
+  }
+  .ovr-block { display:flex; flex-direction:column; align-items:flex-start; line-height: .9; }
+  .ovr { font-family:'Bebas Neue', sans-serif; font-size: 56px; letter-spacing: -1px; }
+  .pos { font-family:'Oswald', sans-serif; font-weight:700; font-size: 18px; margin-top: 4px; letter-spacing: 1px; }
+  .divider { width: 32px; height: 2px; background: currentColor; opacity:.55; margin: 6px 0 4px; }
+
+  .top-right { display:flex; flex-direction:column; align-items:center; gap: 8px; padding-top: 6px; }
+  .flag { width: 26px; height: 18px; border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,.3); display:block; }
+  .club {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: rgba(0,0,0,.15);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Bebas Neue', sans-serif; font-size: 12px; letter-spacing:1px;
+  }
+
+  /* photo silhouette */
+  .photo {
+    width: 100%;
+    height: 42%;
+    margin: 2px 0 6px;
+    display:flex; align-items:flex-end; justify-content:center;
+    position: relative;
+  }
+  .photo svg { width: 90%; height: 100%; opacity: .82; }
+
+  /* Name */
+  .name {
+    font-family:'Oswald', sans-serif;
+    font-weight:700;
+    font-size: 18px;
+    text-align:center;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 4px 0 6px;
+    border-top: 1px solid rgba(0,0,0,.18);
+  }
+  .card.special .name { border-color: rgba(255,255,255,.18); }
+
+  /* Stats grid 3x2 */
+  .stats {
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px 14px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(0,0,0,.18);
+  }
+  .card.special .stats { border-color: rgba(255,255,255,.18); }
+  .stat { display:flex; gap:6px; align-items:baseline; font-size: 13px; font-weight: 700; font-family:'Oswald', sans-serif; letter-spacing:1px; }
+  .stat .val { font-family:'Bebas Neue', sans-serif; font-size: 17px; min-width: 28px; }
+  .stat .lab { opacity:.7; font-size: 11px; }
+
+  /* footer (XP & streak) */
+  .card-foot {
+    margin-top: 6px;
+    display:flex; justify-content:space-between; align-items:center;
+    font-size: 10px; letter-spacing:1px; font-weight:700; font-family:'Oswald', sans-serif;
+    opacity:.7;
+  }
+
+  /* ---------- Mobile preview ---------- */
+  .phones { display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 28px; padding: 0 8px; }
+  .phone {
+    margin: 0 auto;
+    width: 360px; max-width: 100%;
+    border-radius: 38px;
+    padding: 14px;
+    background: linear-gradient(180deg, #1a1f2e, #0d121d);
+    border: 1px solid var(--line);
+    box-shadow: 0 30px 80px -30px rgba(0,0,0,.6);
+  }
+  .phone .screen {
+    border-radius: 28px;
+    background: #0b0f1a;
+    min-height: 640px;
+    padding: 22px 18px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,.04);
+  }
+  .notch { width: 80px; height: 22px; background:#000; border-radius: 0 0 14px 14px; margin: 0 auto 10px; }
+
+  .greet { display:flex; justify-content:space-between; align-items:center; margin-bottom: 14px; }
+  .greet h2 { font-size: 14px; color: var(--muted); font-weight: 500; }
+  .greet .day { font-family:'Oswald',sans-serif; font-size: 12px; color: var(--gold-2); text-transform: uppercase; letter-spacing:1px;}
+
+  .hero-name { font-family: 'Bebas Neue', sans-serif; font-size: 30px; letter-spacing: 1px; margin-bottom: 18px; }
+
+  .cta {
+    width: 100%;
+    border-radius: 16px;
+    padding: 18px 16px;
+    background: linear-gradient(135deg, #2bd47d, #16a35e);
+    color: #04150b;
+    font-weight: 800;
+    font-family: 'Oswald', sans-serif;
+    letter-spacing: 2px;
+    font-size: 16px;
+    text-align: center;
+    display:flex; justify-content:space-between; align-items:center;
+    box-shadow: 0 14px 30px -10px rgba(43,212,125,.5), inset 0 1px 0 rgba(255,255,255,.4);
+    margin-top: 18px;
+    text-transform: uppercase;
+  }
+  .cta.done {
+    background: linear-gradient(135deg, #2a3142, #1a2030);
+    color: var(--muted);
+    box-shadow: none;
+  }
+  .cta .ico { font-size: 22px; }
+
+  .row { display:flex; gap: 10px; margin-top: 14px; }
+  .pill {
+    flex:1;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px 12px;
+    text-align: left;
+  }
+  .pill .lab { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing:1px; font-family:'Oswald',sans-serif; }
+  .pill .val { font-family:'Bebas Neue', sans-serif; font-size: 26px; margin-top: 2px; }
+  .pill .delta.up { color: var(--green); font-size: 11px; }
+  .pill .delta.dn { color: var(--red); font-size: 11px; }
+
+  .radar-wrap { margin-top: 16px; background: var(--bg-2); border:1px solid var(--line); border-radius: 16px; padding: 14px; }
+  .radar-wrap h3 { font-family: 'Oswald', sans-serif; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+
+  .tabbar {
+    position:absolute; left: 0; right: 0; bottom: 0;
+    display:flex; justify-content: space-around;
+    padding: 14px 16px 22px;
+    border-top: 1px solid var(--line);
+    background: rgba(11,15,26,.92);
+    backdrop-filter: blur(8px);
+  }
+  .tab { display:flex; flex-direction:column; align-items:center; gap: 4px; font-size: 10px; color: var(--muted); font-family:'Oswald',sans-serif; text-transform: uppercase; letter-spacing:1px; }
+  .tab.active { color: var(--gold-2); }
+  .tab .dot { width: 22px; height: 22px; border-radius: 8px; background: currentColor; opacity:.85; }
+
+  /* Squad mosaic (staff dashboard) */
+  .squad {
+    display:grid; gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  }
+  .squad .card { max-width: 100%; }
+
+  .legend { display:flex; flex-wrap:wrap; gap: 14px; padding: 14px 8px 0; color: var(--muted); font-size: 12px; }
+  .legend span b { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right: 6px; vertical-align: middle; }
+  .b-gold { background: var(--gold-2); }
+  .b-silver { background: var(--silver-2); }
+  .b-bronze { background: var(--bronze-2); }
+  .b-special { background: linear-gradient(135deg, var(--special-1), var(--special-2)); }
+
+  .note {
+    margin-top: 28px;
+    padding: 16px 18px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .note b { color: var(--ink); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="top">
+    <div>
+      <div class="brand">AUREAK<span>FORM</span></div>
+      <div class="crumbs">Wireframe · Carte FIFA & écran d'accueil joueur</div>
+    </div>
+    <div class="crumbs">24 mai 2026 · v0</div>
+  </header>
+
+  <!-- ============== 1. CARTES FIFA (4 tiers) ============== -->
+  <div class="section-title">1 · Carte joueur — 4 tiers selon le Readiness OVR</div>
+  <div class="grid">
+
+    <!-- GOLD -->
+    <div class="card gold">
+      <div class="card-top">
+        <div class="ovr-block">
+          <div class="ovr">87</div>
+          <div class="pos">MIL</div>
+          <div class="divider"></div>
+        </div>
+        <div class="top-right">
+          <!-- drapeau Burundi 🇧🇮 -->
+          <svg class="flag" viewBox="0 0 3 2"><polygon points="0,0 3,0 1.5,1" fill="#CE1126"/><polygon points="3,0 3,2 1.5,1" fill="#1EB53A"/><polygon points="0,2 3,2 1.5,1" fill="#CE1126"/><polygon points="0,0 0,2 1.5,1" fill="#1EB53A"/><line x1="0" y1="0" x2="3" y2="2" stroke="#fff" stroke-width="0.3"/><line x1="3" y1="0" x2="0" y2="2" stroke="#fff" stroke-width="0.3"/><circle cx="1.5" cy="1" r="0.55" fill="#fff"/><circle cx="1.5" cy="0.66" r="0.12" fill="#CE1126"/><circle cx="1.22" cy="1.17" r="0.12" fill="#CE1126"/><circle cx="1.78" cy="1.17" r="0.12" fill="#CE1126"/></svg>
+          <div class="club">AKF</div>
+        </div>
+      </div>
+      <div class="photo">
+        <svg viewBox="0 0 100 110" fill="currentColor"><path d="M50 12c-9 0-16 7-16 16s7 16 16 16 16-7 16-16-7-16-16-16zm-26 64c0-14 12-22 26-22s26 8 26 22v18H24V76z" opacity=".55"/></svg>
+      </div>
+      <div class="name">J. DEVRIENDT</div>
+      <div class="stats">
+        <div class="stat"><span class="val">88</span><span class="lab">FOR</span></div>
+        <div class="stat"><span class="val">82</span><span class="lab">SOM</span></div>
+        <div class="stat"><span class="val">85</span><span class="lab">REC</span></div>
+        <div class="stat"><span class="val">91</span><span class="lab">PHY</span></div>
+        <div class="stat"><span class="val">90</span><span class="lab">MEN</span></div>
+        <div class="stat"><span class="val">86</span><span class="lab">REG</span></div>
+      </div>
+      <div class="card-foot"><span>🔥 7 JOURS</span><span>XP 1240</span></div>
+    </div>
+
+    <!-- SILVER -->
+    <div class="card silver">
+      <div class="card-top">
+        <div class="ovr-block">
+          <div class="ovr">72</div>
+          <div class="pos">ATT</div>
+          <div class="divider"></div>
+        </div>
+        <div class="top-right">
+          <svg class="flag" viewBox="0 0 3 2"><polygon points="0,0 3,0 1.5,1" fill="#CE1126"/><polygon points="3,0 3,2 1.5,1" fill="#1EB53A"/><polygon points="0,2 3,2 1.5,1" fill="#CE1126"/><polygon points="0,0 0,2 1.5,1" fill="#1EB53A"/><line x1="0" y1="0" x2="3" y2="2" stroke="#fff" stroke-width="0.3"/><line x1="3" y1="0" x2="0" y2="2" stroke="#fff" stroke-width="0.3"/><circle cx="1.5" cy="1" r="0.55" fill="#fff"/><circle cx="1.5" cy="0.66" r="0.12" fill="#CE1126"/><circle cx="1.22" cy="1.17" r="0.12" fill="#CE1126"/><circle cx="1.78" cy="1.17" r="0.12" fill="#CE1126"/></svg>
+          <div class="club">AKF</div>
+        </div>
+      </div>
+      <div class="photo">
+        <svg viewBox="0 0 100 110" fill="currentColor"><path d="M50 12c-9 0-16 7-16 16s7 16 16 16 16-7 16-16-7-16-16-16zm-26 64c0-14 12-22 26-22s26 8 26 22v18H24V76z" opacity=".55"/></svg>
+      </div>
+      <div class="name">L. MARTENS</div>
+      <div class="stats">
+        <div class="stat"><span class="val">74</span><span class="lab">FOR</span></div>
+        <div class="stat"><span class="val">68</span><span class="lab">SOM</span></div>
+        <div class="stat"><span class="val">71</span><span class="lab">REC</span></div>
+        <div class="stat"><span class="val">76</span><span class="lab">PHY</span></div>
+        <div class="stat"><span class="val">72</span><span class="lab">MEN</span></div>
+        <div class="stat"><span class="val">70</span><span class="lab">REG</span></div>
+      </div>
+      <div class="card-foot"><span>🔥 3 JOURS</span><span>XP 480</span></div>
+    </div>
+
+    <!-- BRONZE -->
+    <div class="card bronze">
+      <div class="card-top">
+        <div class="ovr-block">
+          <div class="ovr">58</div>
+          <div class="pos">DEF</div>
+          <div class="divider"></div>
+        </div>
+        <div class="top-right">
+          <svg class="flag" viewBox="0 0 3 2"><polygon points="0,0 3,0 1.5,1" fill="#CE1126"/><polygon points="3,0 3,2 1.5,1" fill="#1EB53A"/><polygon points="0,2 3,2 1.5,1" fill="#CE1126"/><polygon points="0,0 0,2 1.5,1" fill="#1EB53A"/><line x1="0" y1="0" x2="3" y2="2" stroke="#fff" stroke-width="0.3"/><line x1="3" y1="0" x2="0" y2="2" stroke="#fff" stroke-width="0.3"/><circle cx="1.5" cy="1" r="0.55" fill="#fff"/><circle cx="1.5" cy="0.66" r="0.12" fill="#CE1126"/><circle cx="1.22" cy="1.17" r="0.12" fill="#CE1126"/><circle cx="1.78" cy="1.17" r="0.12" fill="#CE1126"/></svg>
+          <div class="club">AKF</div>
+        </div>
+      </div>
+      <div class="photo">
+        <svg viewBox="0 0 100 110" fill="currentColor"><path d="M50 12c-9 0-16 7-16 16s7 16 16 16 16-7 16-16-7-16-16-16zm-26 64c0-14 12-22 26-22s26 8 26 22v18H24V76z" opacity=".55"/></svg>
+      </div>
+      <div class="name">T. CLAES</div>
+      <div class="stats">
+        <div class="stat"><span class="val">52</span><span class="lab">FOR</span></div>
+        <div class="stat"><span class="val">48</span><span class="lab">SOM</span></div>
+        <div class="stat"><span class="val">55</span><span class="lab">REC</span></div>
+        <div class="stat"><span class="val">61</span><span class="lab">PHY</span></div>
+        <div class="stat"><span class="val">60</span><span class="lab">MEN</span></div>
+        <div class="stat"><span class="val">58</span><span class="lab">REG</span></div>
+      </div>
+      <div class="card-foot"><span>⚠ FATIGUE</span><span>XP 90</span></div>
+    </div>
+
+    <!-- SPECIAL TOTW -->
+    <div class="card special">
+      <div class="card-top">
+        <div class="ovr-block">
+          <div class="ovr">94</div>
+          <div class="pos">GK</div>
+          <div class="divider"></div>
+        </div>
+        <div class="top-right">
+          <svg class="flag" viewBox="0 0 3 2"><polygon points="0,0 3,0 1.5,1" fill="#CE1126"/><polygon points="3,0 3,2 1.5,1" fill="#1EB53A"/><polygon points="0,2 3,2 1.5,1" fill="#CE1126"/><polygon points="0,0 0,2 1.5,1" fill="#1EB53A"/><line x1="0" y1="0" x2="3" y2="2" stroke="#fff" stroke-width="0.3"/><line x1="3" y1="0" x2="0" y2="2" stroke="#fff" stroke-width="0.3"/><circle cx="1.5" cy="1" r="0.55" fill="#fff"/><circle cx="1.5" cy="0.66" r="0.12" fill="#CE1126"/><circle cx="1.22" cy="1.17" r="0.12" fill="#CE1126"/><circle cx="1.78" cy="1.17" r="0.12" fill="#CE1126"/></svg>
+          <div class="club">AKF</div>
+        </div>
+      </div>
+      <div class="photo">
+        <svg viewBox="0 0 100 110" fill="currentColor"><path d="M50 12c-9 0-16 7-16 16s7 16 16 16 16-7 16-16-7-16-16-16zm-26 64c0-14 12-22 26-22s26 8 26 22v18H24V76z" opacity=".75"/></svg>
+      </div>
+      <div class="name">N. CASTEELS</div>
+      <div class="stats">
+        <div class="stat"><span class="val">95</span><span class="lab">FOR</span></div>
+        <div class="stat"><span class="val">93</span><span class="lab">SOM</span></div>
+        <div class="stat"><span class="val">94</span><span class="lab">REC</span></div>
+        <div class="stat"><span class="val">96</span><span class="lab">PHY</span></div>
+        <div class="stat"><span class="val">92</span><span class="lab">MEN</span></div>
+        <div class="stat"><span class="val">94</span><span class="lab">REG</span></div>
+      </div>
+      <div class="card-foot"><span>★ TEAM OF THE WEEK</span><span>XP 3120</span></div>
+    </div>
+
+  </div>
+
+  <div class="legend">
+    <span><b class="b-bronze"></b>Bronze · OVR &lt; 60 (alerte)</span>
+    <span><b class="b-silver"></b>Argent · 60-74</span>
+    <span><b class="b-gold"></b>Or · 75-87</span>
+    <span><b class="b-special"></b>Spécial · 88+ (TOTW)</span>
+  </div>
+
+  <!-- ============== 2. ECRAN ACCUEIL JOUEUR ============== -->
+  <div class="section-title">2 · Écran d'accueil PWA joueur (mobile)</div>
+  <div class="phones">
+
+    <!-- Phone A : check-in pas encore fait -->
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"></div>
+        <div class="greet">
+          <h2>Bonjour</h2>
+          <div class="day">DIM. 24 MAI</div>
+        </div>
+        <div class="hero-name">JEREMY</div>
+
+        <!-- la carte au centre -->
+        <div class="card gold" style="max-width: 240px;">
+          <div class="card-top">
+            <div class="ovr-block">
+              <div class="ovr">87</div>
+              <div class="pos">MIL</div>
+              <div class="divider"></div>
+            </div>
+            <div class="top-right">
+              <svg class="flag" viewBox="0 0 3 2"><polygon points="0,0 3,0 1.5,1" fill="#CE1126"/><polygon points="3,0 3,2 1.5,1" fill="#1EB53A"/><polygon points="0,2 3,2 1.5,1" fill="#CE1126"/><polygon points="0,0 0,2 1.5,1" fill="#1EB53A"/><line x1="0" y1="0" x2="3" y2="2" stroke="#fff" stroke-width="0.3"/><line x1="3" y1="0" x2="0" y2="2" stroke="#fff" stroke-width="0.3"/><circle cx="1.5" cy="1" r="0.55" fill="#fff"/><circle cx="1.5" cy="0.66" r="0.12" fill="#CE1126"/><circle cx="1.22" cy="1.17" r="0.12" fill="#CE1126"/><circle cx="1.78" cy="1.17" r="0.12" fill="#CE1126"/></svg>
+              <div class="club">AKF</div>
+            </div>
+          </div>
+          <div class="photo">
+            <svg viewBox="0 0 100 110" fill="currentColor"><path d="M50 12c-9 0-16 7-16 16s7 16 16 16 16-7 16-16-7-16-16-16zm-26 64c0-14 12-22 26-22s26 8 26 22v18H24V76z" opacity=".55"/></svg>
+          </div>
+          <div class="name">J. DEVRIENDT</div>
+          <div class="stats">
+            <div class="stat"><span class="val">88</span><span class="lab">FOR</span></div>
+            <div class="stat"><span class="val">82</span><span class="lab">SOM</span></div>
+            <div class="stat"><span class="val">85</span><span class="lab">REC</span></div>
+            <div class="stat"><span class="val">91</span><span class="lab">PHY</span></div>
+            <div class="stat"><span class="val">90</span><span class="lab">MEN</span></div>
+            <div class="stat"><span class="val">86</span><span class="lab">REG</span></div>
+          </div>
+          <div class="card-foot"><span>🔥 7 JOURS</span><span>XP 1240</span></div>
+        </div>
+
+        <div class="cta">
+          CHECK-IN DU MATIN
+          <span class="ico">›</span>
+        </div>
+
+        <div class="row">
+          <div class="pill">
+            <div class="lab">Forme 7j</div>
+            <div class="val">86 <span class="delta up">▲ 4</span></div>
+          </div>
+          <div class="pill">
+            <div class="lab">Sommeil moy.</div>
+            <div class="val">7h45</div>
+          </div>
+        </div>
+
+        <div class="tabbar">
+          <div class="tab active"><span class="dot"></span>Home</div>
+          <div class="tab"><span class="dot"></span>Stats</div>
+          <div class="tab"><span class="dot"></span>Bobo</div>
+          <div class="tab"><span class="dot"></span>Moi</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phone B : check-in fait, post-séance dispo -->
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"></div>
+        <div class="greet">
+          <h2>Bien joué</h2>
+          <div class="day">CHECK-IN ✓</div>
+        </div>
+        <div class="hero-name">JEREMY</div>
+
+        <div class="card gold" style="max-width: 240px;">
+          <div class="card-top">
+            <div class="ovr-block">
+              <div class="ovr">88</div>
+              <div class="pos">MIL</div>
+              <div class="divider"></div>
+            </div>
+            <div class="top-right">
+              <svg class="flag" viewBox="0 0 3 2"><polygon points="0,0 3,0 1.5,1" fill="#CE1126"/><polygon points="3,0 3,2 1.5,1" fill="#1EB53A"/><polygon points="0,2 3,2 1.5,1" fill="#CE1126"/><polygon points="0,0 0,2 1.5,1" fill="#1EB53A"/><line x1="0" y1="0" x2="3" y2="2" stroke="#fff" stroke-width="0.3"/><line x1="3" y1="0" x2="0" y2="2" stroke="#fff" stroke-width="0.3"/><circle cx="1.5" cy="1" r="0.55" fill="#fff"/><circle cx="1.5" cy="0.66" r="0.12" fill="#CE1126"/><circle cx="1.22" cy="1.17" r="0.12" fill="#CE1126"/><circle cx="1.78" cy="1.17" r="0.12" fill="#CE1126"/></svg>
+              <div class="club">AKF</div>
+            </div>
+          </div>
+          <div class="photo">
+            <svg viewBox="0 0 100 110" fill="currentColor"><path d="M50 12c-9 0-16 7-16 16s7 16 16 16 16-7 16-16-7-16-16-16zm-26 64c0-14 12-22 26-22s26 8 26 22v18H24V76z" opacity=".55"/></svg>
+          </div>
+          <div class="name">J. DEVRIENDT</div>
+          <div class="stats">
+            <div class="stat"><span class="val">90</span><span class="lab">FOR</span></div>
+            <div class="stat"><span class="val">85</span><span class="lab">SOM</span></div>
+            <div class="stat"><span class="val">86</span><span class="lab">REC</span></div>
+            <div class="stat"><span class="val">91</span><span class="lab">PHY</span></div>
+            <div class="stat"><span class="val">92</span><span class="lab">MEN</span></div>
+            <div class="stat"><span class="val">87</span><span class="lab">REG</span></div>
+          </div>
+          <div class="card-foot"><span>🔥 8 JOURS · +50 XP</span><span>XP 1290</span></div>
+        </div>
+
+        <div class="cta done">
+          CHECK-IN DÉJÀ FAIT ✓
+          <span class="ico">✓</span>
+        </div>
+
+        <div class="cta" style="background: linear-gradient(135deg, #00aaff, #0072ff); color: #fff; box-shadow: 0 14px 30px -10px rgba(0,114,255,.5);">
+          POST-SÉANCE
+          <span class="ico">›</span>
+        </div>
+
+        <div class="tabbar">
+          <div class="tab active"><span class="dot"></span>Home</div>
+          <div class="tab"><span class="dot"></span>Stats</div>
+          <div class="tab"><span class="dot"></span>Bobo</div>
+          <div class="tab"><span class="dot"></span>Moi</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============== 3. SQUAD VIEW STAFF ============== -->
+  <div class="section-title">3 · Vue staff — mosaïque squad du jour</div>
+  <div class="squad">
+    <!-- 8 mini cartes mélangées pour donner l'idée du dashboard -->
+    <div class="card gold"><div class="card-top"><div class="ovr-block"><div class="ovr">87</div><div class="pos">MIL</div><div class="divider"></div></div><div class="top-right"><svg class="flag" viewBox="0 0 3 2"><polygon points="0,0 3,0 1.5,1" fill="#CE1126"/><polygon points="3,0 3,2 1.5,1" fill="#1EB53A"/><polygon points="0,2 3,2 1.5,1" fill="#CE1126"/><polygon points="0,0 0,2 1.5,1" fill="#1EB53A"/><line x1="0" y1="0" x2="3" y2="2" stroke="#fff" stroke-width="0.3"/><line x1="3" y1="0" x2="0" y2="2" stroke="#fff" stroke-width="0.3"/><circle cx="1.5" cy="1" r="0.55" fill="#fff"/><circle cx="1.5" cy="0.66" r="0.12" fill="#CE1126"/><circle cx="1.22" cy="1.17" r="0.12" fill="#CE1126"/><circle cx="1.78" cy="1.17" r="0.12" fill="#CE1126"/></svg></div></div><div class="photo"><svg viewBox="0 0 100 110" fill="currentColor"><path d="M50 12c-9 0-16 7-16 16s7 16 16 16 16-7 16-16-7-16-16-16zm-26 64c0-14 12-22 26-22s26 8 26 22v18H24V76z" opacity=".5"/></svg></div><div class="name">DEVRIENDT</div></div>
+    <div class="card silver"><div class="card-top"><div class="ovr-block"><div class="ovr">72</div><div class="pos">ATT</div><div class="divider"></div></div><div class="top-right"><svg class="flag" viewBox="0 0 3 2"><polygon points="0,0 3,0 1.5,1" fill="#CE1126"/><polygon points="3,0 3,2 1.5,1" fill="#1EB53A"/><polygon points="0,2 3,2 1.5,1" fill="#CE1126"/><polygon points="0,0 0,2 1.5,1" fill="#1EB53A"/><line x1="0" y1="0" x2="3" y2="2" stroke="#fff" stroke-width="0.3"/><line x1="3" y1="0" x2="0" y2="2" stroke="#fff" stroke-width="0.3"/><circle cx="1.5" cy="1" r="0.55" fill="#fff"/><circle cx="1.5" cy="0.66" r="0.12" fill="#CE1126"/><circle cx="1.22" cy="1.17" r="0.12" fill="#CE1126"/><circle cx="1.78" cy="1.17" r="0.12" fill="#CE1126"/></svg></div></div><div class="photo"><svg viewBox="0 0 100 110" fill="currentColor"><path d="M50 12c-9 0-16 7-16 16s7 16 16 16 16-7 16-16-7-16-16-16zm-26 64c0-14 12-22 26-22s26 8 26 22v18H24V76z" opacity=".5"/></svg></div><div class="name">MARTENS</div></div>
+    <div class="card bronze"><div class="card-top"><div class="ovr-block"><div class="ovr">58</div><div class="pos">DEF</div><div class="divider"></div></div><div class="top-right"><svg class="flag" viewBox="0 0 3 2"><polygon points="0,0 3,0 1.5,1" fill="#CE1126"/><polygon points="3,0 3,2 1.5,1" fill="#1EB53A"/><polygon points="0,2 3,2 1.5,1" fill="#CE1126"/><polygon points="0,0 0,2 1.5,1" fill="#1EB53A"/><line x1="0" y1="0" x2="3" y2="2" stroke="#fff" stroke-width="0.3"/><line x1="3" y1="0" x2="0" y2="2" stroke="#fff" stroke-width="0.3"/><circle cx="1.5" cy="1" r="0.55" fill="#fff"/><circle cx="1.5" cy="0.66" r="0.12" fill="#CE1126"/><circle cx="1.22" cy="1.17" r="0.12" fill="#CE1126"/><circle cx="1.78" cy="1.17" r="0.12" fill="#CE1126"/></svg></div></div><div class="photo"><svg viewBox="0 0 100 110" fill="currentColor"><path d="M50 12c-9 0-16 7-16 16s7 16 16 16 16-7 16-16-7-16-16-16zm-26 64c0-14 12-22 26-22s26 8 26 22v18H24V76z" opacity=".5"/></svg></div><div class="name">CLAES</div></div>
+    <div class="card special"><div class="card-top"><div class="ovr-block"><div class="ovr">94</div><div class="pos">GK</div><div class="divider"></div></div><div class="top-right"><svg class="flag" viewBox="0 0 3 2"><polygon points="0,0 3,0 1.5,1" fill="#CE1126"/><polygon points="3,0 3,2 1.5,1" fill="#1EB53A"/><polygon points="0,2 3,2 1.5,1" fill="#CE1126"/><polygon points="0,0 0,2 1.5,1" fill="#1EB53A"/><line x1="0" y1="0" x2="3" y2="2" stroke="#fff" stroke-width="0.3"/><line x1="3" y1="0" x2="0" y2="2" stroke="#fff" stroke-width="0.3"/><circle cx="1.5" cy="1" r="0.55" fill="#fff"/><circle cx="1.5" cy="0.66" r="0.12" fill="#CE1126"/><circle cx="1.22" cy="1.17" r="0.12" fill="#CE1126"/><circle cx="1.78" cy="1.17" r="0.12" fill="#CE1126"/></svg></div></div><div class="photo"><svg viewBox="0 0 100 110" fill="currentColor"><path d="M50 12c-9 0-16 7-16 16s7 16 16 16 16-7 16-16-7-16-16-16zm-26 64c0-14 12-22 26-22s26 8 26 22v18H24V76z" opacity=".7"/></svg></div><div class="name">CASTEELS</div></div>
+    <div class="card gold"><div class="card-top"><div class="ovr-block"><div class="ovr">81</div><div class="pos">MIL</div><div class="divider"></div></div><div class="top-right"><svg class="flag" viewBox="0 0 3 2"><polygon points="0,0 3,0 1.5,1" fill="#CE1126"/><polygon points="3,0 3,2 1.5,1" fill="#1EB53A"/><polygon points="0,2 3,2 1.5,1" fill="#CE1126"/><polygon points="0,0 0,2 1.5,1" fill="#1EB53A"/><line x1="0" y1="0" x2="3" y2="2" stroke="#fff" stroke-width="0.3"/><line x1="3" y1="0" x2="0" y2="2" stroke="#fff" stroke-width="0.3"/><circle cx="1.5" cy="1" r="0.55" fill="#fff"/><circle cx="1.5" cy="0.66" r="0.12" fill="#CE1126"/><circle cx="1.22" cy="1.17" r="0.12" fill="#CE1126"/><circle cx="1.78" cy="1.17" r="0.12" fill="#CE1126"/></svg></div></div><div class="photo"><svg viewBox="0 0 100 110" fill="currentColor"><path d="M50 12c-9 0-16 7-16 16s7 16 16 16 16-7 16-16-7-16-16-16zm-26 64c0-14 12-22 26-22s26 8 26 22v18H24V76z" opacity=".5"/></svg></div><div class="name">VAN HOOF</div></div>
+    <div class="card silver"><div class="card-top"><div class="ovr-block"><div class="ovr">69</div><div class="pos">DEF</div><div class="divider"></div></div><div class="top-right"><svg class="flag" viewBox="0 0 3 2"><polygon points="0,0 3,0 1.5,1" fill="#CE1126"/><polygon points="3,0 3,2 1.5,1" fill="#1EB53A"/><polygon points="0,2 3,2 1.5,1" fill="#CE1126"/><polygon points="0,0 0,2 1.5,1" fill="#1EB53A"/><line x1="0" y1="0" x2="3" y2="2" stroke="#fff" stroke-width="0.3"/><line x1="3" y1="0" x2="0" y2="2" stroke="#fff" stroke-width="0.3"/><circle cx="1.5" cy="1" r="0.55" fill="#fff"/><circle cx="1.5" cy="0.66" r="0.12" fill="#CE1126"/><circle cx="1.22" cy="1.17" r="0.12" fill="#CE1126"/><circle cx="1.78" cy="1.17" r="0.12" fill="#CE1126"/></svg></div></div><div class="photo"><svg viewBox="0 0 100 110" fill="currentColor"><path d="M50 12c-9 0-16 7-16 16s7 16 16 16 16-7 16-16-7-16-16-16zm-26 64c0-14 12-22 26-22s26 8 26 22v18H24V76z" opacity=".5"/></svg></div><div class="name">DUBOIS</div></div>
+    <div class="card bronze"><div class="card-top"><div class="ovr-block"><div class="ovr">54</div><div class="pos">ATT</div><div class="divider"></div></div><div class="top-right"><svg class="flag" viewBox="0 0 3 2"><polygon points="0,0 3,0 1.5,1" fill="#CE1126"/><polygon points="3,0 3,2 1.5,1" fill="#1EB53A"/><polygon points="0,2 3,2 1.5,1" fill="#CE1126"/><polygon points="0,0 0,2 1.5,1" fill="#1EB53A"/><line x1="0" y1="0" x2="3" y2="2" stroke="#fff" stroke-width="0.3"/><line x1="3" y1="0" x2="0" y2="2" stroke="#fff" stroke-width="0.3"/><circle cx="1.5" cy="1" r="0.55" fill="#fff"/><circle cx="1.5" cy="0.66" r="0.12" fill="#CE1126"/><circle cx="1.22" cy="1.17" r="0.12" fill="#CE1126"/><circle cx="1.78" cy="1.17" r="0.12" fill="#CE1126"/></svg></div></div><div class="photo"><svg viewBox="0 0 100 110" fill="currentColor"><path d="M50 12c-9 0-16 7-16 16s7 16 16 16 16-7 16-16-7-16-16-16zm-26 64c0-14 12-22 26-22s26 8 26 22v18H24V76z" opacity=".5"/></svg></div><div class="name">PEETERS</div></div>
+    <div class="card gold"><div class="card-top"><div class="ovr-block"><div class="ovr">83</div><div class="pos">DEF</div><div class="divider"></div></div><div class="top-right"><svg class="flag" viewBox="0 0 3 2"><polygon points="0,0 3,0 1.5,1" fill="#CE1126"/><polygon points="3,0 3,2 1.5,1" fill="#1EB53A"/><polygon points="0,2 3,2 1.5,1" fill="#CE1126"/><polygon points="0,0 0,2 1.5,1" fill="#1EB53A"/><line x1="0" y1="0" x2="3" y2="2" stroke="#fff" stroke-width="0.3"/><line x1="3" y1="0" x2="0" y2="2" stroke="#fff" stroke-width="0.3"/><circle cx="1.5" cy="1" r="0.55" fill="#fff"/><circle cx="1.5" cy="0.66" r="0.12" fill="#CE1126"/><circle cx="1.22" cy="1.17" r="0.12" fill="#CE1126"/><circle cx="1.78" cy="1.17" r="0.12" fill="#CE1126"/></svg></div></div><div class="photo"><svg viewBox="0 0 100 110" fill="currentColor"><path d="M50 12c-9 0-16 7-16 16s7 16 16 16 16-7 16-16-7-16-16-16zm-26 64c0-14 12-22 26-22s26 8 26 22v18H24V76z" opacity=".5"/></svg></div><div class="name">JANSSENS</div></div>
+  </div>
+
+  <div class="note">
+    <b>Notes wireframe</b> · les cartes sont en pur CSS (zéro lib) pour qu'on valide juste les <b>proportions, hiérarchie visuelle et code couleur</b>. Les vraies cartes prod auront : photo joueur détourée, animation flip pour voir le verso (historique du jour), micro-shine au scroll, et tap-to-zoom. Les 6 stats (<b>FOR / SOM / REC / PHY / MEN / REG</b>) sont calculées à partir du daily check-in via la même formule pondérée.
+  </div>
+
+</div>
+</body>
+</html>
