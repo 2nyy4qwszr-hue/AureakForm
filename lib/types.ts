@@ -27,6 +27,8 @@ export type DailyCheckinRow = {
   stress: number | null;
   mood: number | null;
   appetite: number | null;
+  /** Échelle Armstrong 1..8 (1 = transparent / bien hydraté, 8 = ambre foncé / déshydraté). */
+  urine_color: number | null;
   readiness_score: number | null;
   created_at: string;
 };

@@ -17,6 +17,7 @@ export type RawCheckin = {
   stress: number | null;               // 1..5  (5 = très stressé)
   mood: number | null;                 // 1..5  (5 = au top)
   appetite: number | null;             // 1..5  (5 = grand appétit)
+  urine_color: number | null;          // 1..8  Armstrong (1=hydraté, 8=déshydraté)
 };
 
 /** clamp helper, et normalise une valeur sur 0-100 */
@@ -58,10 +59,19 @@ export function appetiteScore(c0: RawCheckin): number {
 }
 
 /**
+ * Hydration score depuis la couleur d'urine (Armstrong 1..8).
+ * 1 → 100 (bien hydraté), 8 → 0 (déshydraté).
+ * Renvoie 50 si non renseigné (rétrocompat checkins pré-migration).
+ */
+export function hydrationScore(c0: RawCheckin): number {
+  return c0.urine_color ? c(invertScale(c0.urine_color, 8)) : 50;
+}
+
+/**
  * Les 6 stats affichées sur la carte FIFA, mappées sur les "familles" :
  *  - FOR (Forme générale) = moy. fatigue + mood + appétit
  *  - SOM (Sommeil) = sleepScore
- *  - REC (Récup) = moy. fatigue + soreness
+ *  - REC (Récup) = moy. fatigue + soreness + hydratation
  *  - PHY (Physique / douleurs) = sorenessScore
  *  - MEN (Mental / stress) = moy. stress + mood
  *  - REG (Régularité) = calculée séparément (% de check-ins faits sur 7j)
@@ -76,11 +86,12 @@ export function statsFromCheckin(
   const moo = moodScore(checkin);
   const app = appetiteScore(checkin);
   const sle = sleepScore(checkin);
+  const hyd = hydrationScore(checkin);
 
   return {
     forme: c((fat + moo + app) / 3),
     sleep: sle,
-    recovery: c((fat + sor) / 2),
+    recovery: c((fat + sor + hyd) / 3),
     physical: sor,
     mental: c((str + moo) / 2),
     regularity: c(regularity),

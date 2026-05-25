@@ -27,13 +27,14 @@ const s = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_K
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
+// urine_color = échelle Armstrong 1..8 (1 = transparent / 8 = ambre foncé)
 const PRESETS = {
-  top:     { sleep_hours: 8.0, sleep_quality: 5, fatigue: 2, muscle_soreness: 2, stress: 1, mood: 5, appetite: 5 },
-  high:    { sleep_hours: 7.5, sleep_quality: 4, fatigue: 3, muscle_soreness: 3, stress: 2, mood: 4, appetite: 4 },
-  moyen:   { sleep_hours: 6.5, sleep_quality: 3, fatigue: 5, muscle_soreness: 4, stress: 3, mood: 3, appetite: 3 },
-  low:     { sleep_hours: 5.5, sleep_quality: 2, fatigue: 7, muscle_soreness: 6, stress: 4, mood: 2, appetite: 3 },
-  ko:      { sleep_hours: 4.0, sleep_quality: 2, fatigue: 9, muscle_soreness: 8, stress: 5, mood: 2, appetite: 2 },
-  special: { sleep_hours: 9.0, sleep_quality: 5, fatigue: 1, muscle_soreness: 1, stress: 1, mood: 5, appetite: 5 },
+  top:     { sleep_hours: 8.0, sleep_quality: 5, fatigue: 2, muscle_soreness: 2, stress: 1, mood: 5, appetite: 5, urine_color: 1 },
+  high:    { sleep_hours: 7.5, sleep_quality: 4, fatigue: 3, muscle_soreness: 3, stress: 2, mood: 4, appetite: 4, urine_color: 2 },
+  moyen:   { sleep_hours: 6.5, sleep_quality: 3, fatigue: 5, muscle_soreness: 4, stress: 3, mood: 3, appetite: 3, urine_color: 4 },
+  low:     { sleep_hours: 5.5, sleep_quality: 2, fatigue: 7, muscle_soreness: 6, stress: 4, mood: 2, appetite: 3, urine_color: 6 },
+  ko:      { sleep_hours: 4.0, sleep_quality: 2, fatigue: 9, muscle_soreness: 8, stress: 5, mood: 2, appetite: 2, urine_color: 8 },
+  special: { sleep_hours: 9.0, sleep_quality: 5, fatigue: 1, muscle_soreness: 1, stress: 1, mood: 5, appetite: 5, urine_color: 1 },
 };
 
 // Mix réaliste pondéré
@@ -57,9 +58,10 @@ function ovr(p, reg = 100) {
   const str = c(invert(p.stress, 5));
   const moo = c(normal(p.mood, 5));
   const app = c(normal(p.appetite, 5));
+  const hyd = c(invert(p.urine_color, 8));
   const stats = {
     forme: c((fat + moo + app) / 3),
-    sleep, recovery: c((fat + sor) / 2), physical: sor,
+    sleep, recovery: c((fat + sor + hyd) / 3), physical: sor,
     mental: c((str + moo) / 2), regularity: c(reg),
   };
   return c(stats.sleep*0.25 + stats.recovery*0.20 + stats.physical*0.20 + stats.forme*0.15 + stats.mental*0.10 + stats.regularity*0.10);

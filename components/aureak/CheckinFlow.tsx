@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { ChevronRight, ChevronLeft, Check } from "lucide-react";
 import { BigSlider } from "./BigSlider";
 import { EmojiPicker } from "./EmojiPicker";
+import { UrineColorPicker } from "./UrineColorPicker";
 import { submitCheckin, type CheckinPayload } from "@/app/checkin/actions";
 
 type Step = {
@@ -19,6 +20,7 @@ const STEPS: Step[] = [
   { key: "sleep_quality",   title: "Ton sommeil, qualité ?",                subtitle: "Du gros lag → repos parfait" },
   { key: "fatigue",         title: "Niveau de fatigue ce matin ?",          subtitle: "Au lever, jambes & corps" },
   { key: "muscle_soreness", title: "Des douleurs musculaires ?",            subtitle: "Courbatures, raideurs" },
+  { key: "urine_color",     title: "Couleur de ton urine ?",                subtitle: "1er pipi du matin · indique ton hydratation" },
   { key: "stress",          title: "Stress / pression mentale ?",           subtitle: "Famille, foot, vie perso" },
   { key: "mood",            title: "Humeur du jour ?",                      subtitle: "Tu te lèves dans quel mood" },
   { key: "appetite",        title: "Appétit ce matin ?",                    subtitle: "Tu manges normal, peu, beaucoup ?" },
@@ -59,6 +61,7 @@ const DEFAULT_PAYLOAD: CheckinPayload = {
   sleep_quality: 4,
   fatigue: 4,
   muscle_soreness: 3,
+  urine_color: 3, // milieu de la zone "bien hydraté"
   stress: 2,
   mood: 4,
   appetite: 4,
@@ -185,6 +188,12 @@ export function CheckinFlow() {
                   inverted={true}
                 />
               )}
+              {current.key === "urine_color" && (
+                <UrineColorPicker
+                  value={payload.urine_color}
+                  onChange={(v) => set("urine_color", v)}
+                />
+              )}
               {current.key === "stress" && (
                 <EmojiPicker
                   options={STRESS_FACES}
@@ -251,13 +260,20 @@ export function CheckinFlow() {
 }
 
 function ReviewBlock({ payload }: { payload: CheckinPayload }) {
+  const hydrationLabel =
+    payload.urine_color <= 3
+      ? "bien hydraté"
+      : payload.urine_color <= 5
+        ? "à surveiller"
+        : "déshydraté";
   const rows: { label: string; value: string }[] = [
-    { label: "Sommeil",    value: `${payload.sleep_hours}h · qualité ${payload.sleep_quality}/5` },
-    { label: "Fatigue",    value: `${payload.fatigue}/10` },
-    { label: "Douleurs",   value: `${payload.muscle_soreness}/10` },
-    { label: "Stress",     value: `${payload.stress}/5` },
-    { label: "Humeur",     value: `${payload.mood}/5` },
-    { label: "Appétit",    value: `${payload.appetite}/5` },
+    { label: "Sommeil",     value: `${payload.sleep_hours}h · qualité ${payload.sleep_quality}/5` },
+    { label: "Fatigue",     value: `${payload.fatigue}/10` },
+    { label: "Douleurs",    value: `${payload.muscle_soreness}/10` },
+    { label: "Hydratation", value: `urine ${payload.urine_color}/8 · ${hydrationLabel}` },
+    { label: "Stress",      value: `${payload.stress}/5` },
+    { label: "Humeur",      value: `${payload.mood}/5` },
+    { label: "Appétit",     value: `${payload.appetite}/5` },
   ];
   return (
     <div className="w-full max-w-md mx-auto space-y-2">

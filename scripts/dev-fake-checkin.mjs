@@ -24,10 +24,11 @@ const env = Object.fromEntries(
 const email = process.argv[2] ?? "j.devriendt@aureak.be";
 const preset = process.argv[3] ?? "top";
 
+// urine_color = échelle Armstrong 1..8 (1 = transparent / 8 = ambre foncé)
 const PRESETS = {
-  top:   { sleep_hours: 8.0, sleep_quality: 5, fatigue: 2, muscle_soreness: 2, stress: 1, mood: 5, appetite: 5 },
-  moyen: { sleep_hours: 6.5, sleep_quality: 3, fatigue: 5, muscle_soreness: 4, stress: 3, mood: 3, appetite: 3 },
-  ko:    { sleep_hours: 4.0, sleep_quality: 2, fatigue: 9, muscle_soreness: 8, stress: 5, mood: 2, appetite: 2 },
+  top:   { sleep_hours: 8.0, sleep_quality: 5, fatigue: 2, muscle_soreness: 2, stress: 1, mood: 5, appetite: 5, urine_color: 1 },
+  moyen: { sleep_hours: 6.5, sleep_quality: 3, fatigue: 5, muscle_soreness: 4, stress: 3, mood: 3, appetite: 3, urine_color: 4 },
+  ko:    { sleep_hours: 4.0, sleep_quality: 2, fatigue: 9, muscle_soreness: 8, stress: 5, mood: 2, appetite: 2, urine_color: 8 },
 };
 
 // ── Formules importées depuis lib/readiness.ts (en JS pur) ──
@@ -42,10 +43,11 @@ function computeOvr(p, regularity = 14) {
   const str = c(invert(p.stress, 5));
   const moo = c(normal(p.mood, 5));
   const app = c(normal(p.appetite, 5));
+  const hyd = c(invert(p.urine_color, 8));
   const stats = {
     forme: c((fat + moo + app) / 3),
     sleep,
-    recovery: c((fat + sor) / 2),
+    recovery: c((fat + sor + hyd) / 3),
     physical: sor,
     mental: c((str + moo) / 2),
     regularity: c(regularity),

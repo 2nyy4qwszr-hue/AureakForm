@@ -74,6 +74,8 @@ export type ReportPlayer = {
   fatigue?: number | null;
   soreness?: number | null;
   sleep_hours?: number | null;
+  /** Échelle Armstrong 1..8 (6+ = alerte déshydratation). */
+  urine_color?: number | null;
 };
 
 export type ReportInjury = {
@@ -105,6 +107,9 @@ export function DailyReport({ date, selection, players, injuries }: Props) {
     .sort((a, b) => (b.ovr ?? 0) - (a.ovr ?? 0))
     .slice(0, 3);
   const noShow = players.filter((p) => !p.checkedIn);
+  const dehydrated = players
+    .filter((p) => p.urine_color !== null && p.urine_color !== undefined && p.urine_color >= 6)
+    .sort((a, b) => (b.urine_color ?? 0) - (a.urine_color ?? 0));
 
   return (
     <Document title={`AureakForm — Daily ${date}`}>
@@ -148,7 +153,7 @@ export function DailyReport({ date, selection, players, injuries }: Props) {
                 <Text style={s.pname}>{p.name}</Text>
                 <Text style={s.ppos}>{p.position ?? ""}</Text>
                 <Text style={s.pmeta}>
-                  Fatigue {p.fatigue ?? "—"}/10 · Douleur {p.soreness ?? "—"}/10
+                  Fat {p.fatigue ?? "—"}/10 · Dlr {p.soreness ?? "—"}/10 · Hyd {p.urine_color ?? "—"}/8
                 </Text>
               </View>
             ))}
@@ -168,6 +173,33 @@ export function DailyReport({ date, selection, players, injuries }: Props) {
                 <Text style={s.ppos}>{p.position ?? ""}</Text>
                 <Text style={s.pmeta}>
                   Sommeil {p.sleep_hours ?? "—"}h · OK
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Hydratation — alerte urine >= 6 */}
+        {dehydrated.length > 0 && (
+          <View style={s.section}>
+            <Text style={s.h2}>💧 Alertes hydratation ({dehydrated.length})</Text>
+            {dehydrated.map((p) => (
+              <View key={p.id} style={s.playerRow}>
+                <Text
+                  style={[
+                    s.ovrPill,
+                    {
+                      backgroundColor: (p.urine_color ?? 0) >= 7 ? "#3a1218" : "#3a2912",
+                      color: (p.urine_color ?? 0) >= 7 ? COLORS.red : COLORS.orange,
+                    },
+                  ]}
+                >
+                  {p.urine_color ?? "—"}
+                </Text>
+                <Text style={s.pname}>{p.name}</Text>
+                <Text style={s.ppos}>{p.position ?? ""}</Text>
+                <Text style={s.pmeta}>
+                  Urine {p.urine_color}/8 · OVR {p.ovr ?? "—"}
                 </Text>
               </View>
             ))}

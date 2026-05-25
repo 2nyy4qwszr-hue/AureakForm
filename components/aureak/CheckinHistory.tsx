@@ -68,13 +68,14 @@ export function DailyCheckinList({ checkins }: { checkins: DailyCheckinRow[] }) 
 
             {/* Grid des 7 réponses */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-              <Stat label="Sommeil"   value={c.sleep_hours !== null ? `${c.sleep_hours}h` : "—"} color={colorFor(c.sleep_hours, 10)} />
-              <Stat label="Qualité"   value={`${c.sleep_quality ?? "—"}/5`}    color={colorFor(c.sleep_quality, 5)} />
-              <Stat label="Fatigue"   value={`${c.fatigue ?? "—"}/10`}         color={colorFor(c.fatigue, 10, true)} />
-              <Stat label="Douleurs"  value={`${c.muscle_soreness ?? "—"}/10`} color={colorFor(c.muscle_soreness, 10, true)} />
-              <Stat label="Stress"    value={`${c.stress ?? "—"}/5`}           color={colorFor(c.stress, 5, true)} />
-              <Stat label="Humeur"    value={`${c.mood ?? "—"}/5`}             color={colorFor(c.mood, 5)} />
-              <Stat label="Appétit"   value={`${c.appetite ?? "—"}/5`}         color={colorFor(c.appetite, 5)} />
+              <Stat label="Sommeil"     value={c.sleep_hours !== null ? `${c.sleep_hours}h` : "—"} color={colorFor(c.sleep_hours, 10)} />
+              <Stat label="Qualité"     value={`${c.sleep_quality ?? "—"}/5`}    color={colorFor(c.sleep_quality, 5)} />
+              <Stat label="Fatigue"     value={`${c.fatigue ?? "—"}/10`}         color={colorFor(c.fatigue, 10, true)} />
+              <Stat label="Douleurs"    value={`${c.muscle_soreness ?? "—"}/10`} color={colorFor(c.muscle_soreness, 10, true)} />
+              <Stat label="Hydratation" value={`${c.urine_color ?? "—"}/8`}      color={colorFor(c.urine_color, 8, true)} />
+              <Stat label="Stress"      value={`${c.stress ?? "—"}/5`}           color={colorFor(c.stress, 5, true)} />
+              <Stat label="Humeur"      value={`${c.mood ?? "—"}/5`}             color={colorFor(c.mood, 5)} />
+              <Stat label="Appétit"     value={`${c.appetite ?? "—"}/5`}         color={colorFor(c.appetite, 5)} />
               {c.soreness_zone && (
                 <Stat label="Zone douleur" value={c.soreness_zone} />
               )}

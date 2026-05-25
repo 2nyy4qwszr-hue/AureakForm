@@ -75,6 +75,7 @@ export async function buildDailyReportData(opts: {
       fatigue: today?.fatigue ?? null,
       soreness: today?.muscle_soreness ?? null,
       sleep_hours: today?.sleep_hours ?? null,
+      urine_color: today?.urine_color ?? null,
     };
   });
 

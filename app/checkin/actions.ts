@@ -13,6 +13,8 @@ export type CheckinPayload = {
   stress: number;
   mood: number;
   appetite: number;
+  /** Échelle Armstrong 1..8 (1 = transparent / bien hydraté, 8 = ambre foncé / déshydraté). */
+  urine_color: number;
 };
 
 export async function submitCheckin(payload: CheckinPayload) {
