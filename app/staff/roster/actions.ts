@@ -58,6 +58,7 @@ export async function addPlayer(input: {
     } else {
       const { data: created, error: cErr } = await admin.auth.admin.createUser({
         email,
+        password: "Aureak2026!",
         email_confirm: true,
       });
       if (cErr || !created.user) {
@@ -162,6 +163,7 @@ export async function setPlayerEmail(playerId: string, email: string) {
   } else {
     const { data: created, error: cErr } = await admin.auth.admin.createUser({
       email: normalized,
+      password: "Aureak2026!",
       email_confirm: true,
     });
     if (cErr || !created.user) {
