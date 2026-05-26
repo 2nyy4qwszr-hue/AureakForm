@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Users, AlertTriangle, FileDown, UserPlus, Send } from "lucide-react";
+import { cookies } from "next/headers";
+import { Users, AlertTriangle, FileDown, UserPlus, Send, CalendarRange } from "lucide-react";
 import { requireStaff } from "@/lib/staff";
+import { listCamps, ACTIVE_CAMP_COOKIE } from "@/lib/camp";
+import { CampSwitcher } from "@/components/aureak/CampSwitcher";
 
 export default async function StaffLayout({
   children,
@@ -10,6 +13,12 @@ export default async function StaffLayout({
 }) {
   const ctx = await requireStaff();
   if (!ctx) redirect("/login?error=not_staff");
+
+  const camps = await listCamps(ctx.staff.selection_id);
+  const store = await cookies();
+  const activeCampId = store.get(ACTIVE_CAMP_COOKIE)?.value ?? null;
+  // Si le cookie pointe vers un camp supprimé/hors-sélection, on l'ignore côté UI
+  const validActiveId = camps.find((c) => c.id === activeCampId) ? activeCampId : null;
 
   return (
     <div className="flex-1 flex flex-col min-h-[100dvh]">
@@ -31,12 +40,18 @@ export default async function StaffLayout({
             <Link href="/staff/alerts" className="px-3 py-2 rounded-lg hover:bg-white/5 flex items-center gap-1.5 font-[family-name:var(--font-oswald)] uppercase tracking-widest">
               <AlertTriangle size={14} /> Alertes
             </Link>
+            <Link href="/staff/camps" className="px-3 py-2 rounded-lg hover:bg-white/5 flex items-center gap-1.5 font-[family-name:var(--font-oswald)] uppercase tracking-widest">
+              <CalendarRange size={14} /> Camps
+            </Link>
             <Link href="/staff/roster" className="px-3 py-2 rounded-lg hover:bg-white/5 flex items-center gap-1.5 font-[family-name:var(--font-oswald)] uppercase tracking-widest">
               <UserPlus size={14} /> Roster
             </Link>
             <Link href="/staff/export" className="px-3 py-2 rounded-lg hover:bg-white/5 flex items-center gap-1.5 font-[family-name:var(--font-oswald)] uppercase tracking-widest">
               <FileDown size={14} /> Export
             </Link>
+            <div className="ml-2 pl-2 border-l border-white/10">
+              <CampSwitcher camps={camps} activeCampId={validActiveId} />
+            </div>
           </nav>
         </div>
       </header>

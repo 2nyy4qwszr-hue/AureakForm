@@ -8,6 +8,7 @@ import { TeamPulse } from "@/components/aureak/TeamPulse";
 import { SortToggle } from "@/components/aureak/SortToggle";
 import { statsFromCheckin, readinessOvr, regularity7d } from "@/lib/readiness";
 import { requireStaff } from "@/lib/staff";
+import { getActiveCamp } from "@/lib/camp";
 import type { DailyCheckinRow, PlayerRow, Position, PostSessionRow } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -34,15 +35,39 @@ export default async function StaffSquadPage({
   const filter: "morning" | "session" = sp.filter === "session" ? "session" : "morning";
   const sort: "alert" | "position" = sp.sort === "position" ? "position" : "alert";
 
+  const scope = await getActiveCamp(staff.selection_id);
+
   const todayStr = new Date().toISOString().slice(0, 10);
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
   const sevenDaysAgoStr = sevenDaysAgo.toISOString().slice(0, 10);
 
-  const { data: players } = await supabase
+  // Si un camp est actif, on borne la fenêtre temporelle à la période du stage
+  // (sans déborder dans le futur — on prend min(end_date, today) pour today,
+  //  et max(start_date, sevenDaysAgo) pour le bas).
+  const rangeStartStr = scope
+    ? (scope.dateRange.start > sevenDaysAgoStr ? scope.dateRange.start : sevenDaysAgoStr)
+    : sevenDaysAgoStr;
+  const rangeEndStr = scope
+    ? (scope.dateRange.end < todayStr ? scope.dateRange.end : todayStr)
+    : todayStr;
+
+  // Camp 100% futur : start_date > today → la fenêtre est inversée et tout retournerait vide.
+  // On l'affiche en UI plutôt que d'avoir des graphes vides sans explication.
+  const campIsFuture = scope ? scope.dateRange.start > todayStr : false;
+
+  let playersQuery = supabase
     .from("players")
     .select("*")
     .eq("selection_id", staff.selection_id);
+  if (scope) {
+    if (scope.playerIds.length === 0) {
+      playersQuery = playersQuery.eq("id", "00000000-0000-0000-0000-000000000000");
+    } else {
+      playersQuery = playersQuery.in("id", scope.playerIds);
+    }
+  }
+  const { data: players } = await playersQuery;
 
   const playerList = (players ?? []) as PlayerRow[];
   const playerIds = playerList.map((p) => p.id);
@@ -62,7 +87,8 @@ export default async function StaffSquadPage({
         .from("daily_checkins")
         .select("player_id,date")
         .in("player_id", safeIds)
-        .gte("date", sevenDaysAgoStr),
+        .gte("date", rangeStartStr)
+        .lte("date", rangeEndStr),
       supabase
         .from("injuries")
         .select("player_id")
@@ -72,7 +98,8 @@ export default async function StaffSquadPage({
         .from("post_session")
         .select("*")
         .in("player_id", safeIds)
-        .gte("session_date", sevenDaysAgoStr)
+        .gte("session_date", rangeStartStr)
+        .lte("session_date", rangeEndStr)
         .order("created_at", { ascending: false }),
     ]);
 
@@ -142,6 +169,11 @@ export default async function StaffSquadPage({
             {new Date().toLocaleDateString("fr-FR", {
               weekday: "long", day: "2-digit", month: "long",
             })} · {sorted.length} joueurs
+            {scope && (
+              <span className="ml-2 inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] uppercase tracking-widest bg-[#c9a44b]/15 text-[#c9a44b] border border-[#c9a44b]/40 font-[family-name:var(--font-oswald)] font-bold align-middle">
+                {scope.camp.name}
+              </span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-3 text-sm flex-wrap">
@@ -166,6 +198,15 @@ export default async function StaffSquadPage({
           </div>
         </div>
       </div>
+
+      {campIsFuture && (
+        <div className="mb-6 rounded-2xl border border-[#c9a44b]/30 bg-[#c9a44b]/5 px-5 py-4 text-sm text-[#c9a44b]">
+          ⏳ <b>{scope!.camp.name}</b> n&apos;a pas encore débuté
+          (du {new Date(scope!.dateRange.start).toLocaleDateString("fr-FR", { day: "2-digit", month: "long" })}
+          {" "}au {new Date(scope!.dateRange.end).toLocaleDateString("fr-FR", { day: "2-digit", month: "long" })}).
+          Aucune donnée à afficher tant que le stage n&apos;a pas commencé.
+        </div>
+      )}
 
       {enriched.length > 0 && (
         <TeamPulse

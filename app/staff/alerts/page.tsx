@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AlertTriangle, HeartPulse } from "lucide-react";
 import { requireStaff } from "@/lib/staff";
+import { getActiveCamp } from "@/lib/camp";
 import type { InjuryRow, PlayerRow } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -12,15 +13,29 @@ export default async function StaffAlertsPage() {
   if (!ctx) redirect("/login");
   const { supabase, staff } = ctx;
 
+  const scope = await getActiveCamp(staff.selection_id);
+
   const todayStr = new Date().toISOString().slice(0, 10);
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const sevenDaysAgoStr = sevenDaysAgo.toISOString().slice(0, 10);
+  const rangeStartStr = scope
+    ? (scope.dateRange.start > sevenDaysAgoStr ? scope.dateRange.start : sevenDaysAgoStr)
+    : sevenDaysAgoStr;
 
-  // Get all players of the selection
-  const { data: players } = await supabase
+  // Get all players of the selection (filtered by camp if active)
+  let playersQuery = supabase
     .from("players")
     .select("id,first_name,last_name,position")
     .eq("selection_id", staff.selection_id);
+  if (scope) {
+    if (scope.playerIds.length === 0) {
+      playersQuery = playersQuery.eq("id", "00000000-0000-0000-0000-000000000000");
+    } else {
+      playersQuery = playersQuery.in("id", scope.playerIds);
+    }
+  }
+  const { data: players } = await playersQuery;
   const playerMap = new Map(
     (players ?? []).map((p) => [p.id as string, p as PlayerRow])
   );
@@ -35,18 +50,27 @@ export default async function StaffAlertsPage() {
     .lt("readiness_score", 60)
     .order("readiness_score", { ascending: true });
 
-  // Open injuries (resolved_at NULL) in last 7 days
+  // Tous les player_id ayant un check-in aujourd'hui (toutes scores confondus) —
+  // sert à séparer "vraiment pas encore checké" de "checké mais score >= 60".
+  const { data: checkedToday } = await supabase
+    .from("daily_checkins")
+    .select("player_id")
+    .in("player_id", playerIds.length ? playerIds : ["00000000-0000-0000-0000-000000000000"])
+    .eq("date", todayStr);
+  const checkedTodaySet = new Set((checkedToday ?? []).map((c) => c.player_id as string));
+
+  // Open injuries (resolved_at NULL) — fenêtre 7j ou période du camp si actif
   const { data: openInjuries } = await supabase
     .from("injuries")
     .select("*")
     .in("player_id", playerIds.length ? playerIds : ["00000000-0000-0000-0000-000000000000"])
     .is("resolved_at", null)
-    .gte("declared_at", sevenDaysAgo.toISOString())
+    .gte("declared_at", new Date(rangeStartStr).toISOString())
     .order("declared_at", { ascending: false });
 
-  const noShow = (players ?? []).filter((p) => {
-    return !(lowReadiness ?? []).find((c) => c.player_id === p.id);
-  });
+  // "Pas encore de check-in" = joueurs qui n'ont pas du tout checké aujourd'hui
+  // (pas juste "absents de la liste low-readiness").
+  const noShow = (players ?? []).filter((p) => !checkedTodaySet.has(p.id as string));
 
   return (
     <main className="max-w-[1100px] mx-auto px-5 py-8">
@@ -57,6 +81,11 @@ export default async function StaffAlertsPage() {
         {new Date().toLocaleDateString("fr-FR", {
           weekday: "long", day: "2-digit", month: "long",
         })}
+        {scope && (
+          <span className="ml-2 inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] uppercase tracking-widest bg-[#c9a44b]/15 text-[#c9a44b] border border-[#c9a44b]/40 font-[family-name:var(--font-oswald)] font-bold align-middle">
+            {scope.camp.name}
+          </span>
+        )}
       </p>
 
       {/* Open injuries */}
