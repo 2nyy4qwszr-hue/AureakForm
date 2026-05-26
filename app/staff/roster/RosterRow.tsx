@@ -9,8 +9,17 @@ import {
   deletePlayer,
   promoteToStaff,
   revokeStaff,
+  updatePlayerPosition,
 } from "./actions";
 import type { StaffRole } from "@/lib/staff";
+
+const POSITION_OPTIONS = [
+  { value: "GK",  label: "GK · Gardien" },
+  { value: "DEF", label: "DEF · Défenseur" },
+  { value: "MIL", label: "MIL · Milieu" },
+  { value: "ATT", label: "ATT · Attaquant" },
+] as const;
+type Pos = (typeof POSITION_OPTIONS)[number]["value"];
 
 const ROLE_OPTIONS: { value: StaffRole; label: string }[] = [
   { value: "admin",   label: "Admin" },
@@ -48,6 +57,7 @@ export function RosterRow({ player, viewerIsAdmin }: Props) {
   const [copied, setCopied] = useState(false);
   const [currentRole, setCurrentRole] = useState<StaffRole | null>(player.staffRole);
   const [showRoleMenu, setShowRoleMenu] = useState(false);
+  const [position, setPosition] = useState<Pos>((player.position as Pos) ?? "MIL");
 
   const dirty = email.trim().toLowerCase() !== (savedEmail ?? "").toLowerCase();
   const linked = !!savedEmail;
@@ -128,6 +138,21 @@ export function RosterRow({ player, viewerIsAdmin }: Props) {
     });
   };
 
+  const changePosition = (next: Pos) => {
+    const prev = position;
+    setPosition(next);
+    setMsg(null); setLink(null);
+    startTransition(async () => {
+      const res = await updatePlayerPosition(player.id, next);
+      if (res.ok) {
+        setMsg({ type: "ok", text: `Poste mis à jour (${next})` });
+      } else {
+        setPosition(prev);
+        setMsg({ type: "err", text: res.error });
+      }
+    });
+  };
+
   const revoke = () => {
     if (!confirm(`Retirer le statut staff de ${player.first_name} ${player.last_name} ?\nLa personne perdra l'accès au dashboard /staff. Son compte joueur reste actif.`)) return;
     setMsg(null); setLink(null);
@@ -166,8 +191,22 @@ export function RosterRow({ player, viewerIsAdmin }: Props) {
                 </span>
               )}
             </div>
-            <div className="text-[11px] text-[#8b93a7] truncate">
-              {player.first_name} · {player.position ?? "—"}
+            <div className="text-[11px] text-[#8b93a7] truncate flex items-center gap-1.5">
+              <span className="truncate">{player.first_name}</span>
+              <span>·</span>
+              <select
+                value={position}
+                onChange={(e) => changePosition(e.target.value as Pos)}
+                disabled={pending}
+                title="Changer le poste"
+                className="bg-transparent border border-white/10 rounded px-1.5 py-0.5 text-[11px] text-[#cfd6e6] hover:border-[#c9a44b]/40 focus:outline-none focus:border-[#c9a44b] cursor-pointer disabled:opacity-50"
+              >
+                {POSITION_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value} className="bg-[#0a0e1a]">
+                    {opt.value}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>

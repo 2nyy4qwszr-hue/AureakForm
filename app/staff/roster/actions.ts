@@ -92,6 +92,29 @@ export async function addPlayer(input: {
   return { ok: true as const, id: created.id };
 }
 
+/** Change la position d'un joueur (GK/DEF/MIL/ATT). */
+export async function updatePlayerPosition(playerId: string, position: Pos) {
+  const ctx = await requireStaff();
+  if (!ctx) redirect("/login");
+
+  if (!POSITIONS.includes(position)) {
+    return { ok: false as const, error: "Poste invalide." };
+  }
+
+  const admin = createAdminClient();
+  const { data: player } = await admin
+    .from("players").select("selection_id").eq("id", playerId).maybeSingle();
+  if (!player || player.selection_id !== ctx.staff.selection_id) {
+    return { ok: false as const, error: "Joueur hors de ta sélection." };
+  }
+  const { error } = await admin
+    .from("players").update({ position }).eq("id", playerId);
+  if (error) return { ok: false as const, error: error.message };
+  revalidatePath("/staff/roster");
+  revalidatePath("/staff");
+  return { ok: true as const };
+}
+
 /** Supprime un joueur (et toutes ses données via ON DELETE CASCADE). */
 export async function deletePlayer(playerId: string) {
   const ctx = await requireStaff();
