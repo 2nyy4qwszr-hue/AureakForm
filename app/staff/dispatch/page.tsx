@@ -33,22 +33,46 @@ export default async function DispatchPage() {
 
   const reqList = (requests ?? []) as Req[];
 
-  // Pour chaque demande, compter combien de joueurs ont répondu
-  // (= ont créé un check-in / post-session après le created_at de la demande)
-  const reqWithCounts = await Promise.all(
-    reqList.map(async (r) => {
-      if (totalPlayers === 0) return { ...r, responseCount: 0 };
-      const since = r.created_at;
-      const table = r.kind === "morning_checkin" ? "daily_checkins" : "post_session";
-      const { data: responders } = await admin
-        .from(table)
-        .select("player_id")
+  // Pour chaque demande, on veut compter les joueurs ayant répondu (créé un
+  // check-in/post_session après le created_at de la demande). Au lieu d'une
+  // requête par demande (N+1), on fait 2 requêtes max sur la fenêtre globale
+  // puis on bucketise côté Node.
+  let reqWithCounts: (Req & { responseCount: number })[];
+  if (totalPlayers === 0 || reqList.length === 0) {
+    reqWithCounts = reqList.map((r) => ({ ...r, responseCount: 0 }));
+  } else {
+    const oldestRequest = reqList.reduce(
+      (min, r) => (r.created_at < min ? r.created_at : min),
+      reqList[0].created_at
+    );
+
+    const [{ data: checkinRows }, { data: postRows }] = await Promise.all([
+      admin
+        .from("daily_checkins")
+        .select("player_id,created_at")
         .in("player_id", playerIds)
-        .gte("created_at", since);
-      const uniq = new Set((responders ?? []).map((x) => x.player_id as string));
+        .gte("created_at", oldestRequest),
+      admin
+        .from("post_session")
+        .select("player_id,created_at")
+        .in("player_id", playerIds)
+        .gte("created_at", oldestRequest),
+    ]);
+
+    const rowsByKind = {
+      morning_checkin: (checkinRows ?? []) as { player_id: string; created_at: string }[],
+      post_session: (postRows ?? []) as { player_id: string; created_at: string }[],
+    };
+
+    reqWithCounts = reqList.map((r) => {
+      const rows = r.kind === "morning_checkin" ? rowsByKind.morning_checkin : rowsByKind.post_session;
+      const uniq = new Set<string>();
+      for (const row of rows) {
+        if (row.created_at >= r.created_at) uniq.add(row.player_id);
+      }
       return { ...r, responseCount: uniq.size };
-    })
-  );
+    });
+  }
 
   const active = reqWithCounts.filter((r) => r.active);
   const closed = reqWithCounts.filter((r) => !r.active);
