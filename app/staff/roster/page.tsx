@@ -112,25 +112,45 @@ export default async function RosterPage({
 
       <div className="rounded-2xl border border-white/5 bg-[#131826]">
         {sort === "position" ? (
-          POSITION_ORDER.map((pos) => {
-            const group = enriched.filter((p) => p.position === pos);
-            if (group.length === 0) return null;
-            return (
-              <section key={pos}>
-                <div className="px-4 py-2 bg-[#0a0e1a]/60 border-b border-white/5 sticky top-0 z-10">
-                  <h2 className="font-[family-name:var(--font-oswald)] font-bold uppercase tracking-widest text-xs text-[#c9a44b] flex items-center gap-2">
-                    <span>{POSITION_LABEL[pos]}</span>
-                    <span className="text-[#8b93a7] font-normal">
-                      {group.filter((p) => p.email).length}/{group.length} liés
-                    </span>
-                  </h2>
-                </div>
-                <ul>
-                  {group.map((p) => <RosterRow key={p.id} player={p} viewerIsAdmin={isAdmin} />)}
-                </ul>
-              </section>
-            );
-          })
+          <>
+            {/* Groupe Staff en premier */}
+            {(() => {
+              const staffGroup = enriched.filter((p) => p.staffRole);
+              if (staffGroup.length === 0) return null;
+              return (
+                <section>
+                  <div className="px-4 py-2 bg-[#0a0e1a]/60 border-b border-white/5 sticky top-0 z-10">
+                    <h2 className="font-[family-name:var(--font-oswald)] font-bold uppercase tracking-widest text-xs text-[#c9a44b] flex items-center gap-2">
+                      <span>Staff</span>
+                      <span className="text-[#8b93a7] font-normal">{staffGroup.length}</span>
+                    </h2>
+                  </div>
+                  <ul>
+                    {staffGroup.map((p) => <RosterRow key={p.id} player={p} viewerIsAdmin={isAdmin} />)}
+                  </ul>
+                </section>
+              );
+            })()}
+            {POSITION_ORDER.map((pos) => {
+              const group = enriched.filter((p) => p.position === pos && !p.staffRole);
+              if (group.length === 0) return null;
+              return (
+                <section key={pos}>
+                  <div className="px-4 py-2 bg-[#0a0e1a]/60 border-b border-white/5 sticky top-0 z-10">
+                    <h2 className="font-[family-name:var(--font-oswald)] font-bold uppercase tracking-widest text-xs text-[#c9a44b] flex items-center gap-2">
+                      <span>{POSITION_LABEL[pos]}</span>
+                      <span className="text-[#8b93a7] font-normal">
+                        {group.filter((p) => p.email).length}/{group.length} liés
+                      </span>
+                    </h2>
+                  </div>
+                  <ul>
+                    {group.map((p) => <RosterRow key={p.id} player={p} viewerIsAdmin={isAdmin} />)}
+                  </ul>
+                </section>
+              );
+            })}
+          </>
         ) : (
           <ul>
             {sorted.map((p) => <RosterRow key={p.id} player={p} viewerIsAdmin={isAdmin} />)}
