@@ -99,6 +99,8 @@ export default async function StaffPlayerDetail({
             firstName={player.first_name}
             position={(player.position ?? "MIL") as Position}
             stats={stats}
+            photoUrl={player.photo_url}
+            photoScale={2.4}
             streak={checkins.length}
             footerLeft={ovr < 60 ? "⚠ FATIGUE" : `${checkins.length} check-ins`}
             style={{ maxWidth: 240, margin: "0 auto" }}

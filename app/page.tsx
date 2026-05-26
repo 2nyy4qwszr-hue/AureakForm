@@ -142,6 +142,7 @@ export default async function HomePage() {
         firstName={player.first_name}
         position={(player.position ?? "MIL") as Position}
         stats={baseStats}
+        photoUrl={player.photo_url}
         streak={validScores.length}
         xp={validScores.length * 50 + ovr}
         footerLeft={

@@ -258,7 +258,7 @@ const POSITION_LABEL: Record<Position, string> = {
 };
 
 // Sous-composant pour éviter la duplication entre vue groupée et vue plate
-function PlayerCardLink({ p }: { p: { id: string; first_name: string; last_name: string; position: Position | null; ovr: number; stats: import("@/components/aureak/PlayerCard").WellnessStats; todayCheckin: DailyCheckinRow | null; hasOpenInjury: boolean } }) {
+function PlayerCardLink({ p }: { p: { id: string; first_name: string; last_name: string; position: Position | null; photo_url: string | null; ovr: number; stats: import("@/components/aureak/PlayerCard").WellnessStats; todayCheckin: DailyCheckinRow | null; hasOpenInjury: boolean } }) {
   return (
     <Link href={`/staff/player/${p.id}`} className="block hover:scale-[1.02] transition-transform">
       <PlayerCard
@@ -267,6 +267,7 @@ function PlayerCardLink({ p }: { p: { id: string; first_name: string; last_name:
         firstName={p.first_name}
         position={(p.position ?? "MIL") as Position}
         stats={p.stats}
+        photoUrl={p.photo_url}
         compact
         style={{ maxWidth: "100%" }}
       />

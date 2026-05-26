@@ -28,6 +28,10 @@ export type PlayerCardProps = {
   footerLeft?: string;
   /** Compact mode (no stats, no footer) — for staff squad mosaic */
   compact?: boolean;
+  /** URL de la photo du joueur (ex: /players/Png/Henry Msanga.png). Si absent, silhouette SVG. */
+  photoUrl?: string | null;
+  /** Scale CSS appliqué à la photo (origin: bottom). Default 1.6 — sur la fiche joueur on pousse à 2.4. */
+  photoScale?: number;
   className?: string;
   style?: React.CSSProperties;
 };
@@ -81,6 +85,8 @@ export function PlayerCard({
   tierOverride,
   footerLeft,
   compact = false,
+  photoUrl,
+  photoScale = 1.6,
   className = "",
   style,
 }: PlayerCardProps) {
@@ -160,16 +166,31 @@ export function PlayerCard({
           </div>
         </div>
 
-        {/* PHOTO silhouette */}
+        {/* PHOTO : vraie photo si dispo, sinon silhouette SVG */}
         <div className="flex-1 flex items-end justify-center my-0.5 mb-1.5 min-h-0">
-          <svg
-            viewBox="0 0 100 110"
-            fill="currentColor"
-            className="w-[90%] h-full"
-            style={{ opacity: isDark ? 0.75 : 0.55 }}
-          >
-            <path d="M50 12c-9 0-16 7-16 16s7 16 16 16 16-7 16-16-7-16-16-16zm-26 64c0-14 12-22 26-22s26 8 26 22v18H24V76z" />
-          </svg>
+          {photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={photoUrl}
+              alt={name}
+              className="w-[90%] h-full object-contain object-bottom origin-bottom"
+              style={{
+                transform: `scale(${photoScale})`,
+                filter: isDark
+                  ? "drop-shadow(0 8px 14px rgba(0,0,0,.6))"
+                  : "drop-shadow(0 6px 10px rgba(0,0,0,.35))",
+              }}
+            />
+          ) : (
+            <svg
+              viewBox="0 0 100 110"
+              fill="currentColor"
+              className="w-[90%] h-full"
+              style={{ opacity: isDark ? 0.75 : 0.55 }}
+            >
+              <path d="M50 12c-9 0-16 7-16 16s7 16 16 16 16-7 16-16-7-16-16-16zm-26 64c0-14 12-22 26-22s26 8 26 22v18H24V76z" />
+            </svg>
+          )}
         </div>
 
         {/* NAME : last name gros (style FIFA), prénom plus petit en dessous */}
