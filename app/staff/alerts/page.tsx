@@ -16,8 +16,9 @@ export default async function StaffAlertsPage() {
   const scope = await getActiveCamp(staff.selection_id);
 
   const todayStr = new Date().toISOString().slice(0, 10);
+  // Fenêtre 7 jours incluant aujourd'hui (cohérent avec staff/page.tsx et lib/report.tsx).
   const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
   const sevenDaysAgoStr = sevenDaysAgo.toISOString().slice(0, 10);
   const rangeStartStr = scope
     ? (scope.dateRange.start > sevenDaysAgoStr ? scope.dateRange.start : sevenDaysAgoStr)

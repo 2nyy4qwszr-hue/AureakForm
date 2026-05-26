@@ -25,29 +25,44 @@ export async function buildDailyReportData(opts: {
   const selection = (selections?.[0] ?? null) as SelectionRow | null;
   if (!selection) throw new Error("Aucune sélection trouvée.");
 
+  // On commence par les joueurs de la sélection pour pouvoir filtrer
+  // toutes les sous-requêtes par playerIds. Évite toute fuite cross-sélection
+  // si l'app gère plusieurs équipes à l'avenir.
+  const { data: players } = await supabase
+    .from("players")
+    .select("*")
+    .eq("selection_id", selection.id);
+  const playerList = (players ?? []) as PlayerRow[];
+  const playerIds = playerList.map((p) => p.id);
+
   const sevenDaysAgo = new Date(opts.date);
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
   const sevenStr = sevenDaysAgo.toISOString().slice(0, 10);
 
-  const [{ data: players }, { data: todayCheckins }, { data: recentDates }, { data: injuries }] =
+  // Si aucun joueur, on retourne tout vide sans faire les autres requêtes.
+  if (playerIds.length === 0) {
+    return { selection, players: [], injuries: [] };
+  }
+
+  const [{ data: todayCheckins }, { data: recentDates }, { data: injuries }] =
     await Promise.all([
-      supabase.from("players").select("*").eq("selection_id", selection.id),
       supabase
         .from("daily_checkins")
         .select("*")
-        .eq("date", opts.date),
+        .eq("date", opts.date)
+        .in("player_id", playerIds),
       supabase
         .from("daily_checkins")
         .select("player_id,date")
-        .gte("date", sevenStr),
+        .gte("date", sevenStr)
+        .in("player_id", playerIds),
       supabase
         .from("injuries")
         .select("*")
         .is("resolved_at", null)
+        .in("player_id", playerIds)
         .order("declared_at", { ascending: false }),
     ]);
-
-  const playerList = (players ?? []) as PlayerRow[];
   const checkinByPlayer = new Map<string, DailyCheckinRow>();
   ((todayCheckins ?? []) as DailyCheckinRow[]).forEach((c) =>
     checkinByPlayer.set(c.player_id, c)
