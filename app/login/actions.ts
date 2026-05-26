@@ -14,11 +14,14 @@ export async function sendMagicLink(formData: FormData) {
     hdrs.get("origin") ??
     `https://${hdrs.get("host") ?? "localhost:3000"}`;
 
+  // shouldCreateUser:false → on bloque la création de compte par un email externe.
+  // Les comptes joueurs sont créés par le staff via /staff/roster (generateLink + setPlayerEmail).
+  // Les comptes staff sont créés par un admin existant.
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
       emailRedirectTo: `${origin}/auth/callback?next=/`,
-      shouldCreateUser: true,
+      shouldCreateUser: false,
     },
   });
 

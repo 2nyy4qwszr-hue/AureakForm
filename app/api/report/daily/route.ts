@@ -1,13 +1,19 @@
 import { NextResponse } from "next/server";
 import { renderDailyReportStream } from "@/lib/report";
+import { requireStaff } from "@/lib/staff";
 
 /**
  * GET /api/report/daily?date=YYYY-MM-DD
- * Renvoie le PDF de la journée.
+ * Renvoie le PDF de la journée. Réservé au staff.
  */
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
+  const ctx = await requireStaff();
+  if (!ctx) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const url = new URL(req.url);
   const date = url.searchParams.get("date") ?? new Date().toISOString().slice(0, 10);
 

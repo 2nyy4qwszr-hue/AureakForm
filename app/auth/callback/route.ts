@@ -13,7 +13,13 @@ export async function GET(request: Request) {
   const code = url.searchParams.get("code");
   const tokenHash = url.searchParams.get("token_hash");
   const type = url.searchParams.get("type") as EmailOtpType | null;
-  const next = url.searchParams.get("next") ?? "/";
+  // Anti open-redirect : on n'accepte qu'un path interne, jamais une URL externe.
+  // Rejette //attacker.com, http://..., et même /\\evil.com (que certains navigateurs interprètent comme protocol-relative).
+  const rawNext = url.searchParams.get("next") ?? "/";
+  const next =
+    rawNext.startsWith("/") && !rawNext.startsWith("//") && !rawNext.startsWith("/\\")
+      ? rawNext
+      : "/";
 
   const supabase = await createClient();
 

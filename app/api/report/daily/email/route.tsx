@@ -1,10 +1,31 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { renderToBuffer } from "@react-pdf/renderer";
+import { timingSafeEqual } from "node:crypto";
 import { buildDailyReportData } from "@/lib/report";
 import { DailyReport } from "@/lib/pdf/DailyReport";
+import { requireStaff } from "@/lib/staff";
 
 export const dynamic = "force-dynamic";
+
+function safeBearerEquals(header: string | null, secret: string): boolean {
+  if (!header || !secret) return false;
+  const expected = `Bearer ${secret}`;
+  const a = Buffer.from(header);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
+}
+
+// Échappe les caractères HTML dangereux dans les valeurs venant de la DB.
+function esc(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 /**
  * POST /api/report/daily/email
@@ -12,8 +33,21 @@ export const dynamic = "force-dynamic";
  * Génère le PDF du jour et l'envoie à STAFF_EMAIL via Resend.
  * Utilisé par : le bouton "Envoyer maintenant" du dashboard staff
  * ET le cron quotidien Vercel (via /api/cron/daily-report).
+ *
+ * Auth : staff session OU header Authorization: Bearer ${CRON_SECRET}.
  */
 export async function POST(req: Request) {
+  // Auth : soit le cron interne (Bearer CRON_SECRET), soit un staff connecté.
+  const cronSecret = process.env.CRON_SECRET;
+  const auth = req.headers.get("authorization");
+  const isCron = !!cronSecret && safeBearerEquals(auth, cronSecret);
+  if (!isCron) {
+    const ctx = await requireStaff();
+    if (!ctx) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+  }
+
   const apiKey = process.env.RESEND_API_KEY;
   const toRaw = process.env.STAFF_EMAIL;
   const from = process.env.RESEND_FROM ?? "AureakForm <onboarding@resend.dev>";
@@ -86,7 +120,7 @@ export async function POST(req: Request) {
       html: `
         <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto">
           <h1 style="font-family:'Bebas Neue',Helvetica,sans-serif;letter-spacing:2px;font-size:28px;margin:0">AUREAKFORM</h1>
-          <p style="color:#666">${selection.name} — ${new Date(date).toLocaleDateString("fr-FR", { weekday: "long", day: "2-digit", month: "long" })}</p>
+          <p style="color:#666">${esc(selection.name)} — ${new Date(date).toLocaleDateString("fr-FR", { weekday: "long", day: "2-digit", month: "long" })}</p>
           <table style="width:100%;border-collapse:collapse;margin:20px 0">
             <tr><td style="padding:10px;background:#f5f5f5;border-radius:6px">
               <b>${checked}/${players.length}</b> check-ins ·
