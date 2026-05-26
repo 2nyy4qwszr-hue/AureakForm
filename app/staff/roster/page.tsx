@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireStaff, type StaffRole } from "@/lib/staff";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { listAllAuthUsers } from "@/lib/auth-users";
 import { RosterRow } from "./RosterRow";
 import { AddPlayerForm } from "./AddPlayerForm";
 import type { PlayerRow } from "@/lib/types";
@@ -28,8 +29,8 @@ export default async function RosterPage() {
     .order("last_name");
   const list = (players ?? []) as PlayerRow[];
 
-  // Récupère les emails depuis auth.users en une fois (admin API)
-  const { data: { users } } = await admin.auth.admin.listUsers();
+  // Récupère les emails depuis auth.users (paginé, robuste à >50 comptes)
+  const users = await listAllAuthUsers(admin);
   const emailById = new Map(users.map((u) => [u.id, u.email ?? null]));
 
   // Récupère les rôles staff (user_id → role) de la sélection courante

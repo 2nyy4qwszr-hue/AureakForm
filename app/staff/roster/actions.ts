@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { requireAdmin, requireStaff, type StaffRole } from "@/lib/staff";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { findAuthUserByEmail } from "@/lib/auth-users";
 
 const STAFF_ROLES: readonly StaffRole[] = ["admin", "coach", "medical", "staff"] as const;
 
@@ -51,8 +52,7 @@ export async function addPlayer(input: {
   // Si email fourni : trouve/crée le user et vérifie qu'il n'est pas déjà rattaché
   let userId: string | null = null;
   if (email) {
-    const { data: { users } } = await admin.auth.admin.listUsers();
-    const existing = users.find((u) => u.email?.toLowerCase() === email);
+    const existing = await findAuthUserByEmail(admin, email);
     if (existing) {
       userId = existing.id;
     } else {
@@ -133,8 +133,7 @@ export async function setPlayerEmail(playerId: string, email: string) {
 
   // Trouve ou crée l'auth user
   let userId: string;
-  const { data: { users } } = await admin.auth.admin.listUsers();
-  const existing = users.find((u) => u.email?.toLowerCase() === normalized);
+  const existing = await findAuthUserByEmail(admin, normalized);
   if (existing) {
     userId = existing.id;
   } else {
