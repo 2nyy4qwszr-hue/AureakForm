@@ -202,6 +202,9 @@ export function RosterRow({ player, viewerIsAdmin }: Props) {
             <div className="text-[11px] text-[#8b93a7] truncate flex items-center gap-1.5">
               <span className="truncate">{player.first_name}</span>
               <span>·</span>
+              {isStaff ? (
+                <span className="text-[11px] text-[#c9a44b] font-bold uppercase tracking-wider">Staff</span>
+              ) : (
               <select
                 value={position}
                 onChange={(e) => changePosition(e.target.value as Pos)}
@@ -215,6 +218,7 @@ export function RosterRow({ player, viewerIsAdmin }: Props) {
                   </option>
                 ))}
               </select>
+              )}
             </div>
           </div>
         </div>
