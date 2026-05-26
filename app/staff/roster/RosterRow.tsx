@@ -1,13 +1,30 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Mail, Link as LinkIcon, Check, Copy, Trash2, Loader2, UserX } from "lucide-react";
+import { Mail, Link as LinkIcon, Check, Copy, Trash2, Loader2, UserX, Shield, ShieldOff } from "lucide-react";
 import {
   setPlayerEmail,
   unlinkPlayerEmail,
   generateMagicLinkForPlayer,
   deletePlayer,
+  promoteToStaff,
+  revokeStaff,
 } from "./actions";
+import type { StaffRole } from "@/lib/staff";
+
+const ROLE_OPTIONS: { value: StaffRole; label: string }[] = [
+  { value: "admin",   label: "Admin" },
+  { value: "coach",   label: "Coach" },
+  { value: "medical", label: "Kiné / médical" },
+  { value: "staff",   label: "Staff (autre)" },
+];
+
+const ROLE_BADGE: Record<StaffRole, { label: string; cls: string }> = {
+  admin:   { label: "Admin",   cls: "bg-[#c9a44b]/20 text-[#c9a44b] border-[#c9a44b]/40" },
+  coach:   { label: "Coach",   cls: "bg-[#00aaff]/20 text-[#00aaff] border-[#00aaff]/40" },
+  medical: { label: "Kiné",    cls: "bg-[#2bd47d]/20 text-[#2bd47d] border-[#2bd47d]/40" },
+  staff:   { label: "Staff",   cls: "bg-white/10 text-[#cfd6e6] border-white/20" },
+};
 
 type Props = {
   player: {
@@ -16,19 +33,25 @@ type Props = {
     last_name: string;
     position: string | null;
     email: string | null; // = email du user lié, ou null
+    staffRole: StaffRole | null;
+    isSelf: boolean;
   };
+  viewerIsAdmin: boolean;
 };
 
-export function RosterRow({ player }: Props) {
+export function RosterRow({ player, viewerIsAdmin }: Props) {
   const [email, setEmail] = useState(player.email ?? "");
   const [savedEmail, setSavedEmail] = useState(player.email ?? "");
   const [pending, startTransition] = useTransition();
   const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [link, setLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [currentRole, setCurrentRole] = useState<StaffRole | null>(player.staffRole);
+  const [showRoleMenu, setShowRoleMenu] = useState(false);
 
   const dirty = email.trim().toLowerCase() !== (savedEmail ?? "").toLowerCase();
   const linked = !!savedEmail;
+  const isStaff = !!currentRole;
 
   const save = () => {
     setMsg(null); setLink(null);
@@ -92,6 +115,33 @@ export function RosterRow({ player }: Props) {
     }
   };
 
+  const promote = (role: StaffRole) => {
+    setMsg(null); setLink(null); setShowRoleMenu(false);
+    startTransition(async () => {
+      const res = await promoteToStaff({ playerId: player.id, role });
+      if (res.ok) {
+        setCurrentRole(role);
+        setMsg({ type: "ok", text: `Promu ${ROLE_BADGE[role].label} ✓` });
+      } else {
+        setMsg({ type: "err", text: res.error });
+      }
+    });
+  };
+
+  const revoke = () => {
+    if (!confirm(`Retirer le statut staff de ${player.first_name} ${player.last_name} ?\nLa personne perdra l'accès au dashboard /staff. Son compte joueur reste actif.`)) return;
+    setMsg(null); setLink(null);
+    startTransition(async () => {
+      const res = await revokeStaff(player.id);
+      if (res.ok) {
+        setCurrentRole(null);
+        setMsg({ type: "ok", text: "Statut staff retiré" });
+      } else {
+        setMsg({ type: "err", text: res.error });
+      }
+    });
+  };
+
   return (
     <li className="border-b border-white/5 last:border-b-0 p-4 hover:bg-white/[.02] transition-colors">
       <div className="flex flex-wrap items-center gap-3">
@@ -105,7 +155,17 @@ export function RosterRow({ player }: Props) {
             {player.first_name[0]}{player.last_name[0]}
           </div>
           <div className="min-w-0">
-            <div className="font-[family-name:var(--font-oswald)] font-bold uppercase text-sm truncate">{player.last_name}</div>
+            <div className="font-[family-name:var(--font-oswald)] font-bold uppercase text-sm truncate flex items-center gap-2">
+              <span className="truncate">{player.last_name}</span>
+              {isStaff && (
+                <span
+                  className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] tracking-widest border font-bold ${ROLE_BADGE[currentRole!].cls}`}
+                  title="Rôle staff actif sur cette sélection"
+                >
+                  {ROLE_BADGE[currentRole!].label.toUpperCase()}
+                </span>
+              )}
+            </div>
             <div className="text-[11px] text-[#8b93a7] truncate">
               {player.first_name} · {player.position ?? "—"}
             </div>
@@ -136,7 +196,7 @@ export function RosterRow({ player }: Props) {
         </div>
 
         {/* Actions */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 relative">
           {linked && (
             <>
               <button
@@ -147,6 +207,28 @@ export function RosterRow({ player }: Props) {
               >
                 <LinkIcon size={14} /> Lien
               </button>
+              {viewerIsAdmin && !isStaff && (
+                <button
+                  type="button"
+                  onClick={() => setShowRoleMenu((v) => !v)}
+                  disabled={pending}
+                  className="rounded-lg px-3 py-2 text-xs uppercase tracking-widest font-[family-name:var(--font-oswald)] font-bold bg-[#c9a44b]/15 text-[#c9a44b] border border-[#c9a44b]/30 hover:bg-[#c9a44b]/25 transition flex items-center gap-1.5"
+                  title="Promouvoir en staff"
+                >
+                  <Shield size={14} /> Staff
+                </button>
+              )}
+              {viewerIsAdmin && isStaff && !player.isSelf && (
+                <button
+                  type="button"
+                  onClick={revoke}
+                  disabled={pending}
+                  className="rounded-lg px-2 py-2 text-xs text-[#8b93a7] hover:bg-[#ffa42b]/10 hover:text-[#ffa42b] transition"
+                  title="Retirer le statut staff"
+                >
+                  <ShieldOff size={14} />
+                </button>
+              )}
               <button
                 type="button"
                 onClick={unlink}
@@ -167,6 +249,33 @@ export function RosterRow({ player }: Props) {
           >
             <UserX size={14} />
           </button>
+
+          {showRoleMenu && (
+            <div className="absolute right-0 top-full mt-2 z-20 rounded-xl border border-white/10 bg-[#0a0e1a] shadow-2xl min-w-[200px] overflow-hidden">
+              <div className="px-3 py-2 border-b border-white/5 text-[10px] uppercase tracking-widest text-[#8b93a7] font-[family-name:var(--font-oswald)] font-bold">
+                Promouvoir en…
+              </div>
+              {ROLE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => promote(opt.value)}
+                  disabled={pending}
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-white/5 transition flex items-center gap-2"
+                >
+                  <span className={`inline-block w-2 h-2 rounded-full ${ROLE_BADGE[opt.value].cls.split(" ")[0]}`} />
+                  {opt.label}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => setShowRoleMenu(false)}
+                className="w-full text-center px-3 py-2 text-xs text-[#8b93a7] hover:bg-white/5 transition border-t border-white/5"
+              >
+                Annuler
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

@@ -3,8 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
-import { requireStaff } from "@/lib/staff";
+import { requireAdmin, requireStaff, type StaffRole } from "@/lib/staff";
 import { createAdminClient } from "@/lib/supabase/admin";
+
+const STAFF_ROLES: readonly StaffRole[] = ["admin", "coach", "medical", "staff"] as const;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const POSITIONS = ["GK", "DEF", "MIL", "ATT"] as const;
@@ -226,4 +228,80 @@ export async function generateMagicLinkForPlayer(playerId: string) {
   const url = `${origin}/auth/callback?token_hash=${encodeURIComponent(data.properties.hashed_token)}&type=magiclink&next=/`;
 
   return { ok: true as const, url, email: authUser.email };
+}
+
+/** Promeut un user en staff (admin uniquement). Le user cible doit déjà avoir un compte. */
+export async function promoteToStaff(input: { playerId: string; role: StaffRole; displayName?: string | null }) {
+  const ctx = await requireAdmin();
+  if (!ctx) return { ok: false as const, error: "Réservé aux admins." };
+
+  if (!STAFF_ROLES.includes(input.role)) {
+    return { ok: false as const, error: "Rôle invalide." };
+  }
+
+  const admin = createAdminClient();
+
+  // Le player ciblé doit être dans la sélection de l'admin et avoir un compte lié
+  const { data: player } = await admin
+    .from("players")
+    .select("id, selection_id, user_id, first_name, last_name")
+    .eq("id", input.playerId)
+    .maybeSingle();
+  if (!player || player.selection_id !== ctx.staff.selection_id) {
+    return { ok: false as const, error: "Joueur hors de ta sélection." };
+  }
+  if (!player.user_id) {
+    return { ok: false as const, error: "Ce joueur n'a pas encore d'email rattaché." };
+  }
+
+  const displayName =
+    input.displayName?.trim() || `${player.first_name} ${player.last_name}`.trim();
+
+  const { error } = await admin
+    .from("staff")
+    .upsert(
+      {
+        user_id: player.user_id,
+        selection_id: ctx.staff.selection_id,
+        role: input.role,
+        display_name: displayName,
+      },
+      { onConflict: "user_id" }
+    );
+  if (error) return { ok: false as const, error: error.message };
+
+  revalidatePath("/staff/roster");
+  return { ok: true as const };
+}
+
+/** Retire le statut staff d'un user (admin uniquement). Empêche un admin de se révoquer lui-même. */
+export async function revokeStaff(playerId: string) {
+  const ctx = await requireAdmin();
+  if (!ctx) return { ok: false as const, error: "Réservé aux admins." };
+
+  const admin = createAdminClient();
+  const { data: player } = await admin
+    .from("players")
+    .select("selection_id, user_id")
+    .eq("id", playerId)
+    .maybeSingle();
+  if (!player || player.selection_id !== ctx.staff.selection_id) {
+    return { ok: false as const, error: "Joueur hors de ta sélection." };
+  }
+  if (!player.user_id) {
+    return { ok: false as const, error: "Aucun compte lié." };
+  }
+  if (player.user_id === ctx.user.id) {
+    return { ok: false as const, error: "Tu ne peux pas te révoquer toi-même." };
+  }
+
+  const { error } = await admin
+    .from("staff")
+    .delete()
+    .eq("user_id", player.user_id)
+    .eq("selection_id", ctx.staff.selection_id);
+  if (error) return { ok: false as const, error: error.message };
+
+  revalidatePath("/staff/roster");
+  return { ok: true as const };
 }

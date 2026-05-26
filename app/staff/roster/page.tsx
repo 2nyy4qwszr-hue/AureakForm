@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { requireStaff } from "@/lib/staff";
+import { requireStaff, type StaffRole } from "@/lib/staff";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { RosterRow } from "./RosterRow";
 import { AddPlayerForm } from "./AddPlayerForm";
@@ -18,6 +18,7 @@ export default async function RosterPage() {
   if (!ctx) redirect("/login");
 
   const admin = createAdminClient();
+  const isAdmin = ctx.staff.role === "admin";
 
   // Récupère tous les players de la sélection
   const { data: players } = await admin
@@ -31,12 +32,23 @@ export default async function RosterPage() {
   const { data: { users } } = await admin.auth.admin.listUsers();
   const emailById = new Map(users.map((u) => [u.id, u.email ?? null]));
 
+  // Récupère les rôles staff (user_id → role) de la sélection courante
+  const { data: staffRows } = await admin
+    .from("staff")
+    .select("user_id, role")
+    .eq("selection_id", ctx.staff.selection_id);
+  const staffRoleById = new Map<string, StaffRole>(
+    (staffRows ?? []).map((s) => [s.user_id as string, s.role as StaffRole])
+  );
+
   const enriched = list.map((p) => ({
     id: p.id,
     first_name: p.first_name,
     last_name: p.last_name,
     position: p.position,
     email: p.user_id ? emailById.get(p.user_id) ?? null : null,
+    staffRole: p.user_id ? staffRoleById.get(p.user_id) ?? null : null,
+    isSelf: p.user_id === ctx.user.id,
   }));
 
   const linkedCount = enriched.filter((p) => p.email).length;
@@ -84,7 +96,7 @@ export default async function RosterPage() {
                 </h2>
               </div>
               <ul>
-                {group.map((p) => <RosterRow key={p.id} player={p} />)}
+                {group.map((p) => <RosterRow key={p.id} player={p} viewerIsAdmin={isAdmin} />)}
               </ul>
             </section>
           );
