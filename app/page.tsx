@@ -16,6 +16,14 @@ export default async function HomePage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  // Staff d'abord : un admin/coach/kiné va direct sur /staff
+  const { data: staffRow } = await supabase
+    .from("staff")
+    .select("user_id")
+    .eq("user_id", user.id)
+    .limit(1);
+  if (staffRow && staffRow.length > 0) redirect("/staff");
+
   // .limit(1) + first element : résistant aux éventuels doublons historiques
   const { data: playerRows } = await supabase
     .from("players")
@@ -26,14 +34,6 @@ export default async function HomePage() {
   const player = (playerRows?.[0] ?? null) as PlayerRow | null;
 
   if (!player) {
-    // Un user staff (kiné, coach, admin) sans carte joueur va direct sur /staff
-    // au lieu d'être forcé à créer une fausse carte via /onboarding.
-    const { data: staffRow } = await supabase
-      .from("staff")
-      .select("user_id")
-      .eq("user_id", user.id)
-      .limit(1);
-    if (staffRow && staffRow.length > 0) redirect("/staff");
     redirect("/onboarding");
   }
 
