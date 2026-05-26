@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { BurundiFlag } from "./BurundiFlag";
 
 export type Position = "GK" | "DEF" | "MIL" | "ATT";
@@ -169,18 +170,23 @@ export function PlayerCard({
         {/* PHOTO : vraie photo si dispo, sinon silhouette SVG */}
         <div className="flex-1 flex items-end justify-center my-0.5 mb-1.5 min-h-0">
           {photoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={photoUrl}
-              alt={name}
-              className="w-[90%] h-full object-contain object-bottom origin-bottom"
-              style={{
-                transform: `scale(${photoScale})`,
-                filter: isDark
-                  ? "drop-shadow(0 8px 14px rgba(0,0,0,.6))"
-                  : "drop-shadow(0 6px 10px rgba(0,0,0,.35))",
-              }}
-            />
+            <div className="relative w-[90%] h-full">
+              <Image
+                src={photoUrl}
+                alt={name}
+                fill
+                // 25 cartes en mosaïque staff (~180px chacune) + carte unique
+                // joueur (~320px). Le compact rend en mosaïque ≥ md.
+                sizes={compact ? "(min-width: 768px) 220px, 50vw" : "(min-width: 768px) 360px, 92vw"}
+                className="object-contain object-bottom origin-bottom"
+                style={{
+                  transform: `scale(${photoScale})`,
+                  filter: isDark
+                    ? "drop-shadow(0 8px 14px rgba(0,0,0,.6))"
+                    : "drop-shadow(0 6px 10px rgba(0,0,0,.35))",
+                }}
+              />
+            </div>
           ) : (
             <svg
               viewBox="0 0 100 110"

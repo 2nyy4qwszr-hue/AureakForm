@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Image from "next/image";
 import { Check, Edit2, Loader2, Users } from "lucide-react";
 import { toggleCampPlayer, updateCamp } from "../actions";
 import type { CampRow } from "@/lib/camp";
@@ -247,8 +248,13 @@ export function CampEditor({ camp, groups: initialGroups }: Props) {
                         p.photo_url ? "bg-[#0a0e1a]" : "bg-white/10 text-[#8b93a7]"
                       }`}>
                         {p.photo_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={p.photo_url} alt={p.last_name} className="w-full h-full object-cover" />
+                          <Image
+                            src={p.photo_url}
+                            alt={p.last_name}
+                            width={32}
+                            height={32}
+                            className="w-full h-full object-cover"
+                          />
                         ) : (
                           <>{p.first_name[0]}{p.last_name[0]}</>
                         )}
