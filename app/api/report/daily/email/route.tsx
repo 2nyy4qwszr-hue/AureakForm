@@ -15,15 +15,29 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(req: Request) {
   const apiKey = process.env.RESEND_API_KEY;
-  const to = process.env.STAFF_EMAIL;
+  const toRaw = process.env.STAFF_EMAIL;
   const from = process.env.RESEND_FROM ?? "AureakForm <onboarding@resend.dev>";
 
-  if (!apiKey || !to) {
+  if (!apiKey || !toRaw) {
     return NextResponse.json(
       {
         error:
           "RESEND_API_KEY ou STAFF_EMAIL absent. Configure-les dans .env.local (ou Vercel env).",
       },
+      { status: 400 }
+    );
+  }
+
+  // STAFF_EMAIL accepte 1 ou plusieurs emails séparés par virgule.
+  // Ex: "coach@aureak.be,medic@aureak.be,j.devriendt@aureak.be"
+  const to = toRaw
+    .split(",")
+    .map((e) => e.trim())
+    .filter((e) => e.length > 0);
+
+  if (to.length === 0) {
+    return NextResponse.json(
+      { error: "STAFF_EMAIL ne contient aucune adresse valide." },
       { status: 400 }
     );
   }
@@ -67,7 +81,7 @@ export async function POST(req: Request) {
 
     const result = await resend.emails.send({
       from,
-      to: [to],
+      to,
       subject: `AureakForm — ${selection.name} — ${date} (${checked}/${players.length} check-ins, ${alerts} alertes, ${injuries.length} bobos)`,
       html: `
         <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto">

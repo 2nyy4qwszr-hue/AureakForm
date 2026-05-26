@@ -44,8 +44,8 @@ export default async function StaffExportPage() {
             Envoyer par mail
           </div>
           <p className="text-xs text-[#8b93a7] mb-4">
-            L&apos;adresse <b>STAFF_EMAIL</b> doit être renseignée dans .env.local et
-            la clé <b>RESEND_API_KEY</b> doit être active.
+            L&apos;adresse (ou les adresses séparées par virgule) <b>STAFF_EMAIL</b> doit être
+            renseignée dans .env.local et la clé <b>RESEND_API_KEY</b> doit être active.
           </p>
           <button
             type="submit"
