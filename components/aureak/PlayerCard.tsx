@@ -20,6 +20,8 @@ export type PlayerCardProps = {
   /** Prénom — affiché plus petit, sous le nom (optionnel). */
   firstName?: string;
   position: Position;
+  /** Rôle staff affiché sous le poste (ex: "Admin", "Coach"). */
+  staffRole?: string | null;
   stats: WellnessStats;
   streak?: number;      // jours consécutifs
   xp?: number;
@@ -80,6 +82,7 @@ export function PlayerCard({
   name,
   firstName,
   position,
+  staffRole,
   stats,
   streak,
   xp,
@@ -147,6 +150,14 @@ export function PlayerCard({
             >
               {position}
             </div>
+            {staffRole && (
+              <div
+                className="font-[family-name:var(--font-oswald)] font-bold uppercase"
+                style={{ fontSize: 10, letterSpacing: 1.5, opacity: 0.7 }}
+              >
+                {staffRole}
+              </div>
+            )}
             <div
               className="my-1.5 h-[2px] w-8"
               style={{ background: "currentColor", opacity: 0.55 }}

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Mail, Link as LinkIcon, Check, Copy, Trash2, Loader2, UserX, Shield, ShieldOff } from "lucide-react";
+import Image from "next/image";
+import { Mail, Link as LinkIcon, Check, Copy, Unlink, Loader2, UserX, Shield, ShieldOff } from "lucide-react";
 import {
   setPlayerEmail,
   unlinkPlayerEmail,
@@ -41,6 +42,7 @@ type Props = {
     first_name: string;
     last_name: string;
     position: string | null;
+    photo_url: string | null;
     email: string | null; // = email du user lié, ou null
     staffRole: StaffRole | null;
     isSelf: boolean;
@@ -172,13 +174,19 @@ export function RosterRow({ player, viewerIsAdmin }: Props) {
       <div className="flex flex-wrap items-center gap-3">
         {/* Identité */}
         <div className="flex items-center gap-3 min-w-0 md:w-72">
-          <div className={`w-9 h-9 rounded-full flex items-center justify-center font-[family-name:var(--font-bebas)] text-sm shrink-0 ${
-            linked
-              ? "bg-[#2bd47d]/15 text-[#2bd47d] border border-[#2bd47d]/40"
-              : "bg-[#5a6378]/15 text-[#8b93a7] border border-white/10"
-          }`}>
-            {player.first_name[0]}{player.last_name[0]}
-          </div>
+          {player.photo_url ? (
+            <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 border border-white/10">
+              <Image src={player.photo_url} alt={`${player.first_name} ${player.last_name}`} width={36} height={36} className="object-cover w-full h-full" />
+            </div>
+          ) : (
+            <div className={`w-9 h-9 rounded-full flex items-center justify-center font-[family-name:var(--font-bebas)] text-sm shrink-0 ${
+              linked
+                ? "bg-[#2bd47d]/15 text-[#2bd47d] border border-[#2bd47d]/40"
+                : "bg-[#5a6378]/15 text-[#8b93a7] border border-white/10"
+            }`}>
+              {player.first_name[0]}{player.last_name[0]}
+            </div>
+          )}
           <div className="min-w-0">
             <div className="font-[family-name:var(--font-oswald)] font-bold uppercase text-sm truncate flex items-center gap-2">
               <span className="truncate">{player.last_name}</span>
@@ -246,38 +254,38 @@ export function RosterRow({ player, viewerIsAdmin }: Props) {
               >
                 <LinkIcon size={14} /> Lien
               </button>
-              {viewerIsAdmin && !isStaff && (
-                <button
-                  type="button"
-                  onClick={() => setShowRoleMenu((v) => !v)}
-                  disabled={pending}
-                  className="rounded-lg px-3 py-2 text-xs uppercase tracking-widest font-[family-name:var(--font-oswald)] font-bold bg-[#c9a44b]/15 text-[#c9a44b] border border-[#c9a44b]/30 hover:bg-[#c9a44b]/25 transition flex items-center gap-1.5"
-                  title="Promouvoir en staff"
-                >
-                  <Shield size={14} /> Staff
-                </button>
-              )}
-              {viewerIsAdmin && isStaff && !player.isSelf && (
-                <button
-                  type="button"
-                  onClick={revoke}
-                  disabled={pending}
-                  className="rounded-lg px-2 py-2 text-xs text-[#8b93a7] hover:bg-[#ffa42b]/10 hover:text-[#ffa42b] transition"
-                  title="Retirer le statut staff"
-                >
-                  <ShieldOff size={14} />
-                </button>
-              )}
               <button
                 type="button"
                 onClick={unlink}
                 disabled={pending}
-                className="rounded-lg px-2 py-2 text-xs text-[#8b93a7] hover:bg-[#ffa42b]/10 hover:text-[#ffa42b] transition"
-                title="Délier l'email"
+                className="rounded-lg px-3 py-2 text-xs uppercase tracking-widest font-[family-name:var(--font-oswald)] font-bold bg-[#ffa42b]/15 text-[#ffa42b] border border-[#ffa42b]/30 hover:bg-[#ffa42b]/25 transition flex items-center gap-1.5"
+                title="Délier l'email (le joueur reste, seul l'email est retiré)"
               >
-                <Trash2 size={14} />
+                <Unlink size={14} /> Délier
               </button>
             </>
+          )}
+          {viewerIsAdmin && !isStaff && (
+            <button
+              type="button"
+              onClick={() => setShowRoleMenu((v) => !v)}
+              disabled={pending}
+              className="rounded-lg px-3 py-2 text-xs uppercase tracking-widest font-[family-name:var(--font-oswald)] font-bold bg-[#c9a44b]/15 text-[#c9a44b] border border-[#c9a44b]/30 hover:bg-[#c9a44b]/25 transition flex items-center gap-1.5"
+              title="Promouvoir en staff"
+            >
+              <Shield size={14} /> Staff
+            </button>
+          )}
+          {viewerIsAdmin && isStaff && !player.isSelf && (
+            <button
+              type="button"
+              onClick={revoke}
+              disabled={pending}
+              className="rounded-lg px-2 py-2 text-xs text-[#8b93a7] hover:bg-[#ffa42b]/10 hover:text-[#ffa42b] transition"
+              title="Retirer le statut staff"
+            >
+              <ShieldOff size={14} />
+            </button>
           )}
           <button
             type="button"

@@ -3,6 +3,7 @@ import { requireStaff, type StaffRole } from "@/lib/staff";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { listAllAuthUsers } from "@/lib/auth-users";
 import { RosterRow } from "./RosterRow";
+import { RosterSort } from "./RosterSort";
 import { AddPlayerForm } from "./AddPlayerForm";
 import type { PlayerRow } from "@/lib/types";
 
@@ -14,7 +15,14 @@ const POSITION_LABEL: Record<string, string> = {
   GK: "Gardiens", DEF: "Défenseurs", MIL: "Milieux", ATT: "Attaquants",
 };
 
-export default async function RosterPage() {
+export default async function RosterPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ sort?: string }>;
+}) {
+  const sp = await searchParams;
+  const sort = sp.sort ?? "position";
+
   const ctx = await requireStaff();
   if (!ctx) redirect("/login");
 
@@ -24,7 +32,7 @@ export default async function RosterPage() {
   // Récupère tous les players de la sélection
   const { data: players } = await admin
     .from("players")
-    .select("id, first_name, last_name, position, user_id")
+    .select("id, first_name, last_name, position, user_id, photo_url, staff_role")
     .eq("selection_id", ctx.staff.selection_id)
     .order("last_name");
   const list = (players ?? []) as PlayerRow[];
@@ -47,12 +55,31 @@ export default async function RosterPage() {
     first_name: p.first_name,
     last_name: p.last_name,
     position: p.position,
+    photo_url: p.photo_url,
     email: p.user_id ? emailById.get(p.user_id) ?? null : null,
-    staffRole: p.user_id ? staffRoleById.get(p.user_id) ?? null : null,
+    staffRole: (p.staff_role as StaffRole | null) ?? (p.user_id ? staffRoleById.get(p.user_id) ?? null : null),
     isSelf: p.user_id === ctx.user.id,
   }));
 
   const linkedCount = enriched.filter((p) => p.email).length;
+
+  // Tri
+  const sorted = [...enriched];
+  if (sort === "name") {
+    sorted.sort((a, b) => a.last_name.localeCompare(b.last_name, "fr"));
+  } else if (sort === "email") {
+    sorted.sort((a, b) => {
+      if (a.email && !b.email) return -1;
+      if (!a.email && b.email) return 1;
+      return a.last_name.localeCompare(b.last_name, "fr");
+    });
+  } else if (sort === "staff") {
+    sorted.sort((a, b) => {
+      if (a.staffRole && !b.staffRole) return -1;
+      if (!a.staffRole && b.staffRole) return 1;
+      return a.last_name.localeCompare(b.last_name, "fr");
+    });
+  }
 
   return (
     <main className="max-w-[1100px] mx-auto px-5 py-8">
@@ -62,10 +89,11 @@ export default async function RosterPage() {
             ROSTER · COMPTES
           </h1>
           <p className="text-[#8b93a7] text-sm mt-1">
-            Ajoute des joueurs · lie un email · génère un lien magique à envoyer par WhatsApp/SMS.
+            Ajoute des joueurs · lie un email · gère les rôles staff.
           </p>
         </div>
         <div className="flex gap-3 items-center">
+          <RosterSort current={sort} />
           <div className="rounded-xl bg-[#131826] border border-white/5 px-4 py-3 text-center">
             <div className="text-[10px] uppercase tracking-widest text-[#8b93a7] font-[family-name:var(--font-oswald)]">Joueurs</div>
             <div className="font-[family-name:var(--font-bebas)] text-2xl">{enriched.length}</div>
@@ -83,25 +111,31 @@ export default async function RosterPage() {
       </div>
 
       <div className="rounded-2xl border border-white/5 bg-[#131826]">
-        {POSITION_ORDER.map((pos) => {
-          const group = enriched.filter((p) => p.position === pos);
-          if (group.length === 0) return null;
-          return (
-            <section key={pos}>
-              <div className="px-4 py-2 bg-[#0a0e1a]/60 border-b border-white/5 sticky top-0 z-10">
-                <h2 className="font-[family-name:var(--font-oswald)] font-bold uppercase tracking-widest text-xs text-[#c9a44b] flex items-center gap-2">
-                  <span>{POSITION_LABEL[pos]}</span>
-                  <span className="text-[#8b93a7] font-normal">
-                    {group.filter((p) => p.email).length}/{group.length} liés
-                  </span>
-                </h2>
-              </div>
-              <ul>
-                {group.map((p) => <RosterRow key={p.id} player={p} viewerIsAdmin={isAdmin} />)}
-              </ul>
-            </section>
-          );
-        })}
+        {sort === "position" ? (
+          POSITION_ORDER.map((pos) => {
+            const group = enriched.filter((p) => p.position === pos);
+            if (group.length === 0) return null;
+            return (
+              <section key={pos}>
+                <div className="px-4 py-2 bg-[#0a0e1a]/60 border-b border-white/5 sticky top-0 z-10">
+                  <h2 className="font-[family-name:var(--font-oswald)] font-bold uppercase tracking-widest text-xs text-[#c9a44b] flex items-center gap-2">
+                    <span>{POSITION_LABEL[pos]}</span>
+                    <span className="text-[#8b93a7] font-normal">
+                      {group.filter((p) => p.email).length}/{group.length} liés
+                    </span>
+                  </h2>
+                </div>
+                <ul>
+                  {group.map((p) => <RosterRow key={p.id} player={p} viewerIsAdmin={isAdmin} />)}
+                </ul>
+              </section>
+            );
+          })
+        ) : (
+          <ul>
+            {sorted.map((p) => <RosterRow key={p.id} player={p} viewerIsAdmin={isAdmin} />)}
+          </ul>
+        )}
       </div>
 
       <div className="mt-6 text-xs text-[#8b93a7] space-y-1">

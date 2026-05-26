@@ -12,6 +12,7 @@ export type PlayerRow = {
   jersey_number: number | null;
   photo_url: string | null;
   date_of_birth: string | null;
+  staff_role: string | null;
   created_at: string;
 };
 

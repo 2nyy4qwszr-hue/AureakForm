@@ -98,6 +98,7 @@ export default async function StaffPlayerDetail({
             name={player.last_name}
             firstName={player.first_name}
             position={(player.position ?? "MIL") as Position}
+            staffRole={player.staff_role}
             stats={stats}
             photoUrl={player.photo_url}
             photoScale={2.4}
