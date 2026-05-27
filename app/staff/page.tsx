@@ -226,8 +226,46 @@ export default async function StaffSquadPage({
         </div>
       ) : sort === "position" ? (
         <>
+          {/* Groupe Staff en premier (comme dans /staff/roster) */}
+          {(() => {
+            const staffGroup = enriched.filter((p) => p.staff_role);
+            if (staffGroup.length === 0) return null;
+            return (
+              <section className="mb-6">
+                <h2 className="font-[family-name:var(--font-oswald)] font-bold uppercase tracking-widest text-xs text-[#c9a44b] mb-3 flex items-center gap-2">
+                  <span>Staff</span>
+                  <span className="text-[#8b93a7] font-normal">({staffGroup.length})</span>
+                  <span className="flex-1 h-px bg-white/5 ml-2" />
+                </h2>
+                {view === "list" ? (
+                  filter === "session" ? (
+                    <SquadListSession
+                      rows={staffGroup.map((p) => ({
+                        id: p.id, first_name: p.first_name, last_name: p.last_name,
+                        position: p.position, ovr: p.ovr, latestSession: p.latestSession,
+                      }))}
+                    />
+                  ) : (
+                    <SquadListMorning
+                      rows={staffGroup.map((p) => ({
+                        id: p.id, first_name: p.first_name, last_name: p.last_name,
+                        position: p.position, ovr: p.ovr, todayCheckin: p.todayCheckin,
+                        hasOpenInjury: p.hasOpenInjury,
+                      }))}
+                    />
+                  )
+                ) : (
+                  <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(170px,1fr))]">
+                    {staffGroup.map((p) => (
+                      <PlayerCardLink key={p.id} p={p} />
+                    ))}
+                  </div>
+                )}
+              </section>
+            );
+          })()}
           {POSITION_ORDER.map((pos) => {
-            const group = enriched.filter((p) => (p.position ?? "MIL") === pos);
+            const group = enriched.filter((p) => !p.staff_role && p.position === pos);
             if (group.length === 0) return null;
             return (
               <section key={pos} className="mb-6">
@@ -263,6 +301,44 @@ export default async function StaffSquadPage({
               </section>
             );
           })}
+          {/* Joueurs sans poste (ni staff) — sinon ils sont invisibles ici */}
+          {(() => {
+            const orphans = enriched.filter((p) => !p.staff_role && !p.position);
+            if (orphans.length === 0) return null;
+            return (
+              <section className="mb-6">
+                <h2 className="font-[family-name:var(--font-oswald)] font-bold uppercase tracking-widest text-xs text-[#c9a44b] mb-3 flex items-center gap-2">
+                  <span>Sans poste</span>
+                  <span className="text-[#8b93a7] font-normal">({orphans.length})</span>
+                  <span className="flex-1 h-px bg-white/5 ml-2" />
+                </h2>
+                {view === "list" ? (
+                  filter === "session" ? (
+                    <SquadListSession
+                      rows={orphans.map((p) => ({
+                        id: p.id, first_name: p.first_name, last_name: p.last_name,
+                        position: p.position, ovr: p.ovr, latestSession: p.latestSession,
+                      }))}
+                    />
+                  ) : (
+                    <SquadListMorning
+                      rows={orphans.map((p) => ({
+                        id: p.id, first_name: p.first_name, last_name: p.last_name,
+                        position: p.position, ovr: p.ovr, todayCheckin: p.todayCheckin,
+                        hasOpenInjury: p.hasOpenInjury,
+                      }))}
+                    />
+                  )
+                ) : (
+                  <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(170px,1fr))]">
+                    {orphans.map((p) => (
+                      <PlayerCardLink key={p.id} p={p} />
+                    ))}
+                  </div>
+                )}
+              </section>
+            );
+          })()}
         </>
       ) : view === "list" ? (
         filter === "session" ? (
