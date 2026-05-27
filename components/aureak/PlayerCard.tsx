@@ -202,16 +202,26 @@ export function PlayerCard({
           )}
         </div>
 
-        {/* NAME : prénom (compact) au-dessus + nom de famille gros style FIFA */}
+        {/* NAME : nom de famille (gros, style FIFA) + prénom (petit) en dessous */}
         <div
-          className="text-center pt-1 pb-1.5"
+          className="text-center pt-1 pb-1 flex-shrink-0"
           style={{ borderTop: `1px solid ${innerBorder}` }}
         >
-          {firstName && (
+          <div
+            className="font-[family-name:var(--font-oswald)] font-bold uppercase leading-none truncate"
+            style={{
+              fontSize: compact ? 13 : 17,
+              letterSpacing: 0.5,
+            }}
+            title={name}
+          >
+            {name}
+          </div>
+          {firstName && firstName.trim() && (
             <div
-              className="font-[family-name:var(--font-oswald)] uppercase leading-none truncate"
+              className="font-[family-name:var(--font-oswald)] uppercase leading-none truncate mt-1"
               style={{
-                fontSize: compact ? 11 : 13,
+                fontSize: compact ? 10 : 12,
                 letterSpacing: 0.4,
                 fontWeight: 500,
                 opacity: 0.85,
@@ -221,16 +231,6 @@ export function PlayerCard({
               {firstName.split(" ")[0]}
             </div>
           )}
-          <div
-            className="font-[family-name:var(--font-oswald)] font-bold uppercase leading-tight mt-0.5"
-            style={{
-              fontSize: compact ? 15 : 19,
-              letterSpacing: 0.5,
-              wordBreak: "break-word",
-            }}
-          >
-            {name}
-          </div>
         </div>
 
         {!compact && (
