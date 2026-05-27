@@ -145,19 +145,11 @@ export function PlayerCard({
               {ovr === 0 ? "—" : ovr}
             </div>
             <div
-              className="font-[family-name:var(--font-oswald)] font-bold mt-1"
+              className="font-[family-name:var(--font-oswald)] font-bold uppercase mt-1"
               style={{ fontSize: 18, letterSpacing: 1 }}
             >
-              {position}
+              {staffRole ?? position}
             </div>
-            {staffRole && (
-              <div
-                className="font-[family-name:var(--font-oswald)] font-bold uppercase"
-                style={{ fontSize: 10, letterSpacing: 1.5, opacity: 0.7 }}
-              >
-                {staffRole}
-              </div>
-            )}
             <div
               className="my-1.5 h-[2px] w-8"
               style={{ background: "currentColor", opacity: 0.55 }}
@@ -210,33 +202,35 @@ export function PlayerCard({
           )}
         </div>
 
-        {/* NAME : last name gros (style FIFA), prénom plus petit en dessous */}
+        {/* NAME : prénom (compact) au-dessus + nom de famille gros style FIFA */}
         <div
           className="text-center pt-1 pb-1.5"
           style={{ borderTop: `1px solid ${innerBorder}` }}
         >
+          {firstName && (
+            <div
+              className="font-[family-name:var(--font-oswald)] uppercase leading-none truncate"
+              style={{
+                fontSize: compact ? 11 : 13,
+                letterSpacing: 0.4,
+                fontWeight: 500,
+                opacity: 0.85,
+              }}
+              title={firstName}
+            >
+              {firstName.split(" ")[0]}
+            </div>
+          )}
           <div
-            className="font-[family-name:var(--font-oswald)] font-bold uppercase leading-tight"
+            className="font-[family-name:var(--font-oswald)] font-bold uppercase leading-tight mt-0.5"
             style={{
-              fontSize: compact ? 13 : 17,
+              fontSize: compact ? 15 : 19,
               letterSpacing: 0.5,
               wordBreak: "break-word",
             }}
           >
             {name}
           </div>
-          {firstName && (
-            <div
-              className="font-[family-name:var(--font-oswald)] opacity-80 capitalize leading-none mt-1"
-              style={{
-                fontSize: compact ? 12 : 14,
-                letterSpacing: 0.4,
-                fontWeight: 500,
-              }}
-            >
-              {firstName}
-            </div>
-          )}
         </div>
 
         {!compact && (
