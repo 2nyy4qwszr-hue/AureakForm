@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { requireStaff, type StaffRole } from "@/lib/staff";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { listAllAuthUsers } from "@/lib/auth-users";
+import { getActiveCamp } from "@/lib/camp";
 import { RosterRow } from "./RosterRow";
 import { RosterSort } from "./RosterSort";
 import { AddPlayerForm } from "./AddPlayerForm";
@@ -29,12 +30,23 @@ export default async function RosterPage({
   const admin = createAdminClient();
   const isAdmin = ctx.staff.role === "admin";
 
-  // Récupère tous les players de la sélection
-  const { data: players } = await admin
+  // Si un camp est actif, on borne le roster aux joueurs convoqués sur ce camp
+  const scope = await getActiveCamp(ctx.staff.selection_id);
+
+  // Récupère tous les players de la sélection (puis filtrés par camp si scope)
+  let playersQuery = admin
     .from("players")
     .select("id, first_name, last_name, position, user_id, photo_url, staff_role")
     .eq("selection_id", ctx.staff.selection_id)
     .order("last_name");
+  if (scope) {
+    if (scope.playerIds.length === 0) {
+      playersQuery = playersQuery.eq("id", "00000000-0000-0000-0000-000000000000");
+    } else {
+      playersQuery = playersQuery.in("id", scope.playerIds);
+    }
+  }
+  const { data: players } = await playersQuery;
   const list = (players ?? []) as PlayerRow[];
 
   // Récupère les emails depuis auth.users (paginé, robuste à >50 comptes)
@@ -91,6 +103,14 @@ export default async function RosterPage({
           <p className="text-[#8b93a7] text-sm mt-1">
             Ajoute des joueurs · lie un email · gère les rôles staff.
           </p>
+          {scope && (
+            <p className="text-[11px] mt-1 uppercase tracking-widest font-[family-name:var(--font-oswald)] font-bold text-[#c9a44b]">
+              Filtre camp actif : {scope.camp.name}
+              <span className="text-[#8b93a7] font-normal normal-case tracking-normal ml-2">
+                — change ou retire via le sélecteur en haut à droite
+              </span>
+            </p>
+          )}
         </div>
         <div className="flex gap-3 items-center">
           <RosterSort current={sort} />
