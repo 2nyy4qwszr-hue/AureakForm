@@ -150,6 +150,24 @@ export default async function RosterPage({
                 </section>
               );
             })}
+            {/* Joueurs sans poste (ni staff) — sinon ils sont invisibles ici */}
+            {(() => {
+              const orphans = enriched.filter((p) => !p.position && !p.staffRole);
+              if (orphans.length === 0) return null;
+              return (
+                <section>
+                  <div className="px-4 py-2 bg-[#0a0e1a]/60 border-b border-white/5 sticky top-0 z-10">
+                    <h2 className="font-[family-name:var(--font-oswald)] font-bold uppercase tracking-widest text-xs text-[#c9a44b] flex items-center gap-2">
+                      <span>Sans poste</span>
+                      <span className="text-[#8b93a7] font-normal">{orphans.length}</span>
+                    </h2>
+                  </div>
+                  <ul>
+                    {orphans.map((p) => <RosterRow key={p.id} player={p} viewerIsAdmin={isAdmin} />)}
+                  </ul>
+                </section>
+              );
+            })()}
           </>
         ) : (
           <ul>
